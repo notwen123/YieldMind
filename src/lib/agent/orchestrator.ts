@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import { PoolScanner, PoolInfo } from './scanner';
 import { DeltaHedger } from './hedger';
 import { Auditor, AuditParams } from './auditor';
@@ -85,6 +86,23 @@ export class YieldMindOrchestrator {
 
     // Delta Neutral Entry: 50% short hedge of base asset value
     const hedgeSize   = pool.tvl * 0.001; // Scale for sandbox/demo
+    
+    // 1. Risk Router Whitelisted Execution (ERC-8004 Compliance)
+    console.log(`[YieldMind] Requesting Risk Router Approval for ${pool.token0}...`);
+    const { intent, signature: riskSig } = await this.auditor.signRiskIntent(
+      `${pool.token0}USD`,
+      'SELL',
+      hedgeSize
+    );
+    
+    const routerTx = await this.auditor.submitToRouter(intent, riskSig);
+    if (!routerTx) {
+      console.error("[YieldMind] Risk Router REJECTED or failed. Aborting trade.");
+      return;
+    }
+
+    // 2. Execution (Kraken CLI)
+    console.log(`[YieldMind] Risk Router APPROVED. Executing hedge...`);
     const hedgeResult = await this.hedger.openShortHedge(pool.token0, hedgeSize);
     this.state.hedgePosition = hedgeResult;
 
@@ -97,15 +115,18 @@ export class YieldMindOrchestrator {
       riskScore:   Math.floor(pool.score),
     };
 
-    // 1. Create EIP-712 Artifact
-    const { signature, intent } = await this.auditor.createValidationArtifact('DEPOSIT_LP', params);
+    // 3. Create Validation Artifact
+    const { signature, intent: auditIntent } = await this.auditor.createValidationArtifact('DEPOSIT_LP', params);
     
-    // 2. Post to Registry (On-Chain Truth)
-    // We use a mock hash for the checkpoint if we don't deploy the full checkpointing sub-system
-    const dummyHash = ethers.id(`${Date.now()}-${this.agentId}`);
-    const onChainTx = await this.auditor.postOnChain(dummyHash, 100);
+    // 4. Post to Registry (On-Chain Truth)
+    const intentJson = JSON.stringify(auditIntent, (_, v) => typeof v === 'bigint' ? v.toString() : v);
+    const onChainTx = await this.auditor.postOnChain(
+      ethers.keccak256(ethers.toUtf8Bytes(intentJson)),
+      100,
+      `Cycle ${this.state.cycleCount + 1}: Automated RP rotation`
+    );
 
-    // 3. Log to Supabase Audit Trail
+    // 5. Log to Supabase Audit Trail
     await this.auditor.postToRegistry('DEPOSIT_LP', params, signature, onChainTx || undefined);
   }
 
@@ -135,11 +156,15 @@ export class YieldMindOrchestrator {
         riskScore:   Math.floor(this.state.currentPool.score),
       };
 
-      const { signature } = await this.auditor.createValidationArtifact('REBALANCE', params);
+      const { signature, intent } = await this.auditor.createValidationArtifact('REBALANCE', params);
       
       // Post validation artifact
-      const dummyHash = ethers.id(`rebalance-${Date.now()}`);
-      const onChainTx = await this.auditor.postOnChain(dummyHash, 100);
+      const rebalanceJson = JSON.stringify(intent, (_, v) => typeof v === 'bigint' ? v.toString() : v);
+      const onChainTx = await this.auditor.postOnChain(
+        ethers.keccak256(ethers.toUtf8Bytes(rebalanceJson)),
+        100,
+        `Cycle ${this.state.cycleCount + 1}: Drift rebalance`
+      );
       
       await this.auditor.postToRegistry('REBALANCE', params, signature, onChainTx || undefined);
     } else {
@@ -151,6 +176,3 @@ export class YieldMindOrchestrator {
     return this.state;
   }
 }
-
-// Minimal ethers helper for hashing since we don't import full ethers here
-import { ethers } from 'ethers';

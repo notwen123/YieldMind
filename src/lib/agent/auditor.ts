@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { supabaseAdmin } from '@/lib/supabase/client';
 
-const TRADE_INTENT_TYPE = {
+const VALIDATION_ARTIFACT_TYPE = {
   TradeIntent: [
     { name: 'agentId',           type: 'uint256' },
     { name: 'action',            type: 'string'  },
@@ -17,10 +17,24 @@ const TRADE_INTENT_TYPE = {
   ],
 };
 
-const VALIDATION_REGISTRY_ABI = [
+// ERC-8004 Risk Router TradeIntent (matches RiskRouter.sol)
+const RISK_ROUTER_INTENT_TYPE = {
+  TradeIntent: [
+    { name: 'agentId',         type: 'uint256' },
+    { name: 'agentWallet',     type: 'address' },
+    { name: 'pair',            type: 'string'  },
+    { name: 'action',          type: 'string'  },
+    { name: 'amountUsdScaled', type: 'uint256' },
+    { name: 'maxSlippageBps',  type: 'uint256' },
+    { name: 'nonce',           type: 'uint256' },
+    { name: 'deadline',        type: 'uint256' },
+  ],
+};
+
+const ABI = [
   "function postEIP712Attestation(uint256 agentId, bytes32 checkpointHash, uint8 score, string calldata notes) external",
-  "function postAttestation(uint256 agentId, bytes32 checkpointHash, uint8 score, uint8 proofType, bytes calldata proof, string calldata notes) external",
-  "event AttestationPosted(uint256 indexed agentId, address indexed validator, bytes32 indexed checkpointHash, uint8 score, uint8 proofType)"
+  "function submitTradeIntent((uint256 agentId, address agentWallet, string pair, string action, uint256 amountUsdScaled, uint256 maxSlippageBps, uint256 nonce, uint256 deadline) intent, bytes signature) external returns (bool approved, string memory reason)",
+  "function getIntentNonce(uint256 agentId) external view returns (uint256)",
 ];
 
 export interface AuditParams {
@@ -35,8 +49,10 @@ export interface AuditParams {
 export class Auditor {
   private signer: ethers.Wallet;
   private registryAddress: string;
+  private routerAddress: string;
   private agentId: number;
-  private contract: ethers.Contract;
+  private registryContract: ethers.Contract;
+  private routerContract: ethers.Contract;
 
   constructor() {
     const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://rpc.ankr.com/eth_sepolia';
@@ -61,11 +77,61 @@ export class Auditor {
 
     this.signer = new ethers.Wallet(privateKey, provider);
     this.registryAddress = process.env.VALIDATION_REGISTRY_ADDRESS || ethers.ZeroAddress;
+    this.routerAddress = process.env.RISK_ROUTER_ADDRESS || ethers.ZeroAddress;
     this.agentId = Number(process.env.AGENT_ID ?? 5);
     
-    this.contract = new ethers.Contract(this.registryAddress, VALIDATION_REGISTRY_ABI, this.signer);
+    this.registryContract = new ethers.Contract(this.registryAddress, ABI, this.signer);
+    this.routerContract = new ethers.Contract(this.routerAddress, ABI, this.signer);
   }
 
+  /**
+   * Signs a Trustless Trade Intent for the Risk Router (Whitelisted Execution)
+   */
+  async signRiskIntent(pair: string, action: string, amountUsd: number) {
+    const nonce = await this.routerContract.getIntentNonce(this.agentId);
+    const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+
+    const domain = {
+      name: 'RiskRouter',
+      version: '1',
+      chainId: 11155111,
+      verifyingContract: this.routerAddress,
+    };
+
+    const intent = {
+      agentId:         this.agentId,
+      agentWallet:     this.signer.address,
+      pair,
+      action,
+      amountUsdScaled: BigInt(Math.floor(amountUsd * 100)),
+      maxSlippageBps:  BigInt(50), // 0.5%
+      nonce,
+      deadline:        BigInt(deadline),
+    };
+
+    const signature = await this.signer.signTypedData(domain, RISK_ROUTER_INTENT_TYPE, intent);
+    return { intent, signature };
+  }
+
+  /**
+   * Submits the signed intent to the Risk Router for on-chain approval.
+   */
+  async submitToRouter(intent: any, signature: string) {
+    try {
+      console.log(`🛡️ Submitting intent to Risk Router: ${this.routerAddress}...`);
+      const tx = await this.routerContract.submitTradeIntent(intent, signature);
+      console.log(`✅ Router Tx: ${tx.hash}`);
+      await tx.wait();
+      return tx.hash;
+    } catch (error: any) {
+      console.error("❌ Risk Router Submission Failed:", error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Legacy: Creates an Audit Artifact (Trade Intent Attestation)
+   */
   async createValidationArtifact(action: string, params: AuditParams) {
     const domain = {
       name: 'YieldMind',
@@ -87,41 +153,23 @@ export class Auditor {
       chainId:           BigInt(11155111),
     };
 
-    const signature = await this.signer.signTypedData(domain, TRADE_INTENT_TYPE, intent);
+    const signature = await this.signer.signTypedData(domain, VALIDATION_ARTIFACT_TYPE, intent);
     return { intent, signature };
   }
 
-  /**
-   * Post the signed artifact to the on-chain Registry.
-   * This is the "Truth" part of ERC-8004.
-   */
   async postOnChain(checkpointHash: string, score: number = 100, notes: string = "Autonomous cycle validation") {
     try {
       console.log(`🔗 Posting attestation to Registry: ${this.registryAddress}...`);
-      const tx = await this.contract.postEIP712Attestation(
-        this.agentId,
-        checkpointHash,
-        score,
-        notes
-      );
-      console.log(`✅ Transaction sent: ${tx.hash}`);
+      const tx = await this.registryContract.postEIP712Attestation(this.agentId, checkpointHash, score, notes);
       await tx.wait();
       return tx.hash;
     } catch (error) {
-      console.error("❌ Failed to post on-chain:", error);
+      console.error("❌ Failed to post attestation:", error);
       return null;
     }
   }
 
-  /**
-   * Persist the signed artifact to Supabase audit_logs and optionally on-chain.
-   */
-  async postToRegistry(
-    action: string,
-    params: AuditParams,
-    signature: string,
-    txHash?: string,
-  ) {
+  async postToRegistry(action: string, params: AuditParams, signature: string, txHash?: string) {
     const { data, error } = await supabaseAdmin
       .from('audit_logs')
       .insert({
