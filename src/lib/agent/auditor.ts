@@ -29,7 +29,7 @@ export class Auditor {
   private registryAddress: string;
 
   constructor() {
-    const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
+    const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.public.blastapi.io");
     const privateKey = process.env.PRIVATE_KEY || '';
     if (!privateKey) {
       throw new Error("PRIVATE_KEY not found in environment");

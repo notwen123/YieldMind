@@ -9,7 +9,16 @@ const AGENT_REGISTRY_ABI = [
 ];
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
+  // Ultra-robust provider with 2-minute timeout
+  const fetchReq = new ethers.FetchRequest(process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.public.chainstack.com");
+  fetchReq.timeout = 120000; // 120 seconds
+
+  const provider = new ethers.JsonRpcProvider(
+    fetchReq,
+    { name: "sepolia", chainId: 11155111 },
+    { staticNetwork: true }
+  );
+  
   const privateKey = process.env.PRIVATE_KEY;
   if (!privateKey) throw new Error("PRIVATE_KEY missing");
 
