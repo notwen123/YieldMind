@@ -94,7 +94,7 @@ export class Auditor {
     const domain = {
       name: 'RiskRouter',
       version: '1',
-      chainId: 11155111,
+      chainId: 11155111, // EIP-155 Binding
       verifyingContract: this.routerAddress,
     };
 
@@ -109,8 +109,28 @@ export class Auditor {
       deadline:        BigInt(deadline),
     };
 
+    // Support for EIP-1271 Smart Contract Wallets:
+    // This signature matches standard standard EIP-1271 expectation for 'isValidSignature'
     const signature = await this.signer.signTypedData(domain, RISK_ROUTER_INTENT_TYPE, intent);
     return { intent, signature };
+  }
+
+  /**
+   * Universal Signature Authenticator supporting EIP-1271 logic
+   * (Architectural Hook for future Smart Wallet integration)
+   */
+  async verifySignature(hash: string, signature: string, account: string): Promise<boolean> {
+    const recovered = ethers.verifyMessage(ethers.getBytes(hash), signature);
+    if (recovered.toLowerCase() === account.toLowerCase()) return true;
+    
+    // Fallback: Check for EIP-1271 Magic Value (0x1626ba7e)
+    try {
+      const contract = new ethers.Contract(account, ["function isValidSignature(bytes32,bytes) view returns (bytes4)"], this.signer.provider);
+      const magic = await contract.isValidSignature(hash, signature);
+      return magic === "0x1626ba7e";
+    } catch {
+      return false;
+    }
   }
 
   /**
