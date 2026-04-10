@@ -1,297 +1,341 @@
-🏆 Target: Best Yield / Portfolio Agent ($2,500) + Best Trustless Trading Agent ($10,000)
+<div align="center">
 
-The Idea: YieldMind — AI-Powered Delta-Neutral LP Manager
-An agent that farms yield on Aerodrome Finance (Base chain) while hedging directional risk via Kraken CLI — maintaining a delta-neutral position automatically.
-How It Works:
+# 🧠 YieldMind
 
-Agent monitors Aerodrome LP pools for highest fee APR opportunities
-Deposits liquidity into optimal pool via Aerodrome
-Simultaneously opens a short hedge on Kraken to neutralize price exposure
-When volatility spikes → rebalances LP range + adjusts hedge size
-Every rebalance decision is signed as an ERC-8004 validation artifact
+### The World's First Autonomous Delta-Neutral LP Agent with On-Chain Verifiable Trust
 
-Why This Wins:
+[![Sepolia](https://img.shields.io/badge/Network-Sepolia-blue?style=flat-square)](https://sepolia.etherscan.io)
+[![ERC-8004](https://img.shields.io/badge/Standard-ERC--8004-purple?style=flat-square)](https://eips.ethereum.org/EIPS/eip-8004)
+[![Kraken CLI](https://img.shields.io/badge/Execution-Kraken%20CLI-orange?style=flat-square)](https://github.com/kraken-cli)
+[![Aerodrome](https://img.shields.io/badge/LP-Aerodrome%20Finance-red?style=flat-square)](https://aerodrome.finance)
+[![Next.js](https://img.shields.io/badge/Dashboard-Next.js%2016-black?style=flat-square)](https://nextjs.org)
 
-Aerodrome is listed as a tech partner but almost nobody is building with it — judges will notice
-Delta-neutral yield farming is a real institutional strategy — strong business value score
-It's a genuinely different product from SENTINEL-X, showing range
-Directly targets the only unclaimed special award
+> **Targeting:** Best Yield/Portfolio Agent ($2,500) · Best Trustless Trading Agent ($10,000) · Best Compliance & Risk Guardrails ($2,500)
 
+</div>
 
-YieldMind — Complete Technical Deep Dive
-🏗️ Architecture Overview
+---
 
-┌─────────────────────────────────────────────────────┐
-│                    YieldMind Agent                   │
-├─────────────────┬───────────────────────────────────┤
-│  SCANNER Module │  HEDGER Module  │  AUDITOR Module  │
-│  (Aerodrome)    │  (Kraken CLI)   │  (ERC-8004)      │
-└─────────────────┴───────────────────────────────────┘
+## The Problem
 
-📦 Module 1: SCANNER — Aerodrome Pool Intelligence
-What it does:
+Liquidity providers on DeFi protocols face a silent killer: **impermanent loss**.
 
-Continuously monitors all Aerodrome Finance liquidity pools on Base chain and scores them by yield opportunity.
-How to build it:
-python
+When you deposit $10,000 into an ETH/USDC pool on Aerodrome Finance, you're taking on full directional exposure to ETH. If ETH drops 20%, you don't just miss the gains — you lose more than if you'd held the assets outright. Meanwhile, the yield you're earning (30–45% APR) barely covers the loss.
 
-# scanner.py
-from aerodrome_sdk import AerodromeClient
-from prism_api import PrismClient
+Existing solutions are either:
+- **Manual** — requiring constant human monitoring and rebalancing
+- **Opaque** — no verifiable proof of what the agent actually did
+- **Untrustworthy** — no on-chain identity, reputation, or audit trail
 
-class PoolScanner:
-    def __init__(self):
-        self.aerodrome = AerodromeClient(chain="base")
-        self.prism = PrismClient(api_key="prism_sk_...")
-    
-    def get_top_pools(self):
-        pools = self.aerodrome.get_all_pools()
-        scored = []
-        
-        for pool in pools:
-            score = self.score_pool(pool)
-            scored.append((pool, score))
-        
-        return sorted(scored, key=lambda x: x[1], reverse=True)[:5]
-    
-    def score_pool(self, pool):
-        # Weighted scoring formula
-        fee_apr = pool.fee_apr           # e.g. 45%
-        tvl_score = min(pool.tvl / 1_000_000, 1.0)  # normalize TVL
-        volatility = self.prism.get_risk(pool.token0)["volatility"]
-        
-        # Higher APR + Higher TVL + Lower Volatility = Better Score
-        score = (fee_apr * 0.5) + (tvl_score * 0.3) - (volatility * 0.2)
-        return score
+The result: institutional-grade yield strategies remain inaccessible to most participants, and autonomous agents can't be trusted with real capital.
 
-Scoring Criteria:
-Factor	Weight	Why
-Fee APR	50%	Primary yield source
-TVL depth	30%	Low TVL = slippage risk
-Volatility	-20%	High vol = impermanent loss
-Token liquidity on Kraken	+bonus	Must be hedgeable
-📦 Module 2: HEDGER — Kraken CLI Delta Neutralizer
-The Core Concept:
+---
 
-When you deposit $1000 into an ETH/USDC pool on Aerodrome, you have $500 of ETH exposure. If ETH drops 10%, you lose $50 in impermanent loss. The HEDGER opens a $500 short on ETH/USD via Kraken to cancel this out.
-Delta Calculation:
-python
+## The Solution
 
-# hedger.py
-import subprocess
-import json
+**YieldMind** is an autonomous AI agent that:
 
-class DeltaHedger:
-    def __init__(self):
-        self.kraken_cli = "/usr/local/bin/kraken"
-    
-    def calculate_hedge_size(self, pool_position):
-        """
-        For a 50/50 pool: hedge = 50% of total position in token0
-        For concentrated liquidity: calculate actual delta at current price
-        """
-        token0_value = pool_position["token0_usd_value"]
-        current_price = pool_position["token0_price"]
-        
-        # Delta = amount of token0 in pool (in base units)
-        delta = token0_value / current_price
-        return delta
-    
-    def open_short_hedge(self, asset, size_usd):
-        """Execute short via Kraken CLI"""
-        pair = f"{asset}USD"
-        
-        cmd = [
-            self.kraken_cli, "trade", "create",
-            "--pair", pair,
-            "--type", "sell",          # short = sell
-            "--ordertype", "market",
-            "--volume", str(size_usd),
-            "--leverage", "2"          # 2x leverage to hedge with less collateral
-        ]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        return json.loads(result.stdout)
-    
-    def rebalance_hedge(self, current_delta, target_delta):
-        """Called when price moves and delta drifts"""
-        drift = abs(current_delta - target_delta)
-        
-        if drift > 0.05:  # 5% drift threshold triggers rebalance
-            adjustment = target_delta - current_delta
-            if adjustment > 0:
-                self.open_short_hedge("ETH", adjustment)
-            else:
-                self.close_short_partial("ETH", abs(adjustment))
+1. **Scans** Aerodrome Finance pools on Base chain, scoring them by APR, TVL, and volatility
+2. **Deposits** liquidity into the highest-scoring pool
+3. **Hedges** the directional exposure immediately via a short position on Kraken CLI — achieving delta neutrality
+4. **Monitors** the position every cycle, rebalancing when delta drifts beyond 5%
+5. **Audits** every single action with an EIP-712 signed artifact posted to the on-chain ValidationRegistry
+6. **Builds** a verifiable reputation score on the ERC-8004 ReputationRegistry
 
-Rebalancing Trigger Logic:
+The result: **yield without directional risk**, with every decision cryptographically proven on-chain.
 
-Price moves → Pool delta changes → HEDGER checks drift every 15 min
-If drift > 5%  → Rebalance hedge
-If volatility spikes (PRISM signal) → Tighten LP range + increase hedge
-If APR drops below threshold → Exit pool, close hedge, find new pool
+---
 
-📦 Module 3: AUDITOR — ERC-8004 Validation Layer
-Every action gets a signed artifact:
-javascript
+## Why YieldMind is Unique
 
-// auditor.js
-const { ethers } = require("ethers");
+| Feature | YieldMind | Typical DeFi Bot | Manual LP |
+|---|---|---|---|
+| Delta-neutral hedging | ✅ Automatic | ❌ | ❌ |
+| On-chain identity (ERC-8004) | ✅ Agent ID 5 | ❌ | ❌ |
+| EIP-712 signed every action | ✅ | ❌ | ❌ |
+| Risk Router gated execution | ✅ | ❌ | ❌ |
+| Verifiable reputation score | ✅ 98/100 | ❌ | ❌ |
+| Supabase real-time audit trail | ✅ | ❌ | ❌ |
+| Live dashboard | ✅ | ❌ | ❌ |
+| Aerodrome + Kraken combined | ✅ | ❌ | ❌ |
 
-const TRADE_INTENT_TYPE = {
-  TradeIntent: [
-    { name: "agentId", type: "uint256" },
-    { name: "action", type: "string" },      // "DEPOSIT_LP" | "OPEN_HEDGE" | "REBALANCE"
-    { name: "asset", type: "string" },
-    { name: "amount", type: "uint256" },
-    { name: "deltaBeforeAction", type: "int256" },
-    { name: "deltaAfterAction", type: "int256" },
-    { name: "expectedYieldAPR", type: "uint256" },
-    { name: "riskScore", type: "uint256" },
-    { name: "timestamp", type: "uint256" },
-    { name: "chainId", type: "uint256" }
-  ]
-};
+---
 
-async function createValidationArtifact(action, params) {
-  const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
-  const signer = new ethers.Wallet(process.env.AGENT_PRIVATE_KEY, provider);
-  
-  const domain = {
-    name: "YieldMind",
-    version: "1",
-    chainId: 11155111,  // Sepolia
-    verifyingContract: process.env.VALIDATION_REGISTRY_ADDRESS
-  };
-  
-  const intent = {
-    agentId: process.env.AGENT_ID,
-    action: action,
-    asset: params.asset,
-    amount: ethers.parseUnits(params.amount.toString(), 18),
-    deltaBeforeAction: params.deltaBefore,
-    deltaAfterAction: params.deltaAfter,
-    expectedYieldAPR: params.apr * 100,   // basis points
-    riskScore: params.riskScore,
-    timestamp: Math.floor(Date.now() / 1000),
-    chainId: 11155111
-  };
-  
-  // EIP-712 signed artifact
-  const signature = await signer.signTypedData(domain, TRADE_INTENT_TYPE, intent);
-  
-  // Post to ERC-8004 Validation Registry
-  await postToRegistry(intent, signature);
-  
-  return { intent, signature };
-}
+## Architecture
 
-🤖 Main Orchestrator Agent
-python
+### System Overview
 
-# yieldmind_agent.py — LangGraph workflow
-from langgraph.graph import StateGraph
-from scanner import PoolScanner
-from hedger import DeltaHedger
-from auditor import create_validation_artifact
+```mermaid
+graph TB
+    subgraph YieldMind["🧠 YieldMind Agent"]
+        SCANNER["📡 SCANNER\nAerodrome Pool Intelligence\nAPR · TVL · Volatility Scoring"]
+        HEDGER["⚡ HEDGER\nKraken CLI\nDelta Neutralizer"]
+        AUDITOR["🔐 AUDITOR\nEIP-712 Signer\nERC-8004 Artifacts"]
+        ORCH["🎯 ORCHESTRATOR\nCycle Loop\nState Machine"]
+    end
 
-class YieldMindState(TypedDict):
-    current_pool: dict
-    lp_position: dict
-    hedge_position: dict
-    portfolio_delta: float
-    total_pnl: float
-    cycle_count: int
+    subgraph OnChain["⛓️ Sepolia Testnet"]
+        AR["AgentRegistry\nERC-721 Identity\n0x4830..."]
+        RR["RiskRouter\nTradeIntent Validation\n0x8E57..."]
+        VR["ValidationRegistry\nAttestation Store\n0x7C9f..."]
+        REP["ReputationRegistry\n98/100 Score\n0x4223..."]
+        VAULT["HackathonVault\nCapital Sandbox\n0xEf7B..."]
+    end
 
-def build_agent():
-    graph = StateGraph(YieldMindState)
-    
-    graph.add_node("scan_pools", scan_pools_node)
-    graph.add_node("enter_position", enter_position_node)
-    graph.add_node("monitor_delta", monitor_delta_node)
-    graph.add_node("rebalance", rebalance_node)
-    graph.add_node("exit_position", exit_position_node)
-    graph.add_node("audit", audit_node)
-    
-    # Flow
-    graph.add_edge("scan_pools", "enter_position")
-    graph.add_edge("enter_position", "monitor_delta")
-    graph.add_conditional_edges("monitor_delta", check_rebalance_needed,
-        {"rebalance": "rebalance", "audit": "audit", "exit": "exit_position"})
-    graph.add_edge("rebalance", "audit")
-    graph.add_edge("audit", "monitor_delta")  # loop
-    graph.add_edge("exit_position", "scan_pools")  # find next opportunity
-    
-    return graph.compile()
+    subgraph External["🌐 External"]
+        AERO["Aerodrome Finance\nBase Chain LP Pools"]
+        KRAKEN["Kraken Exchange\nSpot + Futures"]
+        PRISM["PRISM API\nVolatility Signals"]
+    end
 
-def monitor_delta_node(state):
-    """Check if hedge needs rebalancing every 15 minutes"""
-    current_delta = calculate_current_delta(state["lp_position"])
-    target_delta = 0.0  # we want delta = 0 always
-    drift = abs(current_delta - target_delta)
-    
-    state["portfolio_delta"] = current_delta
-    
-    if drift > 0.05:
-        return {"next": "rebalance"}
-    elif should_exit(state):
-        return {"next": "exit"}
-    else:
-        return {"next": "audit"}
+    subgraph Infra["🗄️ Infrastructure"]
+        SUPA["Supabase\naudit_logs · agents · performance_stats"]
+        DASH["Next.js Dashboard\nLive Delta · PnL · Logs"]
+    end
 
-📊 On-Chain Reputation Signals
+    ORCH --> SCANNER
+    ORCH --> HEDGER
+    ORCH --> AUDITOR
 
-Every action posts these signals to the ERC-8004 Reputation Registry:
+    SCANNER --> AERO
+    SCANNER --> PRISM
+    HEDGER --> KRAKEN
 
-✅ DEPOSIT_LP       → +reputation (entered valid pool)
-✅ HEDGE_OPENED     → +reputation (delta neutralized)
-✅ REBALANCE        → +reputation (maintained delta < 5% drift)
-✅ PROFITABLE_EXIT  → +reputation (positive PnL cycle)
-⚠️ LARGE_DRIFT      → -reputation (delta drifted > 10% before fix)
-❌ FAILED_HEDGE     → -reputation (Kraken order rejected)
+    AUDITOR --> RR
+    AUDITOR --> VR
+    AUDITOR --> REP
+    ORCH --> AR
+    ORCH --> VAULT
 
-This gives the agent a verifiable yield management track record that compounds over time.
-🗂️ Project File Structure
+    AUDITOR --> SUPA
+    DASH --> SUPA
+    DASH --> ORCH
+```
 
+### Execution Flow — One Cycle
+
+```mermaid
+sequenceDiagram
+    participant D as Dashboard
+    participant O as Orchestrator
+    participant S as Scanner
+    participant H as Hedger (Kraken CLI)
+    participant RR as RiskRouter (Sepolia)
+    participant VR as ValidationRegistry
+    participant DB as Supabase
+
+    D->>O: GET /api/agent/cycle
+    O->>S: getTopPools()
+    S-->>O: WETH/USDC @ 38.4% APR (score: 88)
+    O->>O: signRiskIntent() EIP-712
+    O->>RR: submitTradeIntent(intent, sig)
+    RR-->>O: TradeApproved ✅
+    O->>H: openShortHedge(WETH, $142k)
+    H-->>O: txid: sandbox-tx-1775702398722
+    O->>O: createValidationArtifact() EIP-712
+    O->>VR: postEIP712Attestation(agentId, hash, 100)
+    VR-->>O: AttestationPosted event ✅
+    O->>DB: insertAuditLog(action, sig, txHash)
+    O-->>D: AgentState { delta: 0.012, action: DEPOSIT_LP }
+```
+
+### Delta Neutralization Logic
+
+```mermaid
+graph LR
+    A["LP Deposit\n$10,000 WETH/USDC"] --> B["WETH Exposure\n$5,000 long delta"]
+    B --> C{"Delta > 5%?"}
+    C -->|Yes| D["Open Short\nKraken CLI\n$5,000 WETH/USD"]
+    C -->|No| E["Monitor\nevery 15 min"]
+    D --> F["Delta ≈ 0\nNeutral ✅"]
+    F --> G{"Price moves\n> 5% drift?"}
+    G -->|Yes| H["Rebalance Hedge\n+ EIP-712 Artifact"]
+    G -->|No| E
+    H --> F
+```
+
+### On-Chain Trust Stack
+
+```mermaid
+graph TD
+    A["Agent Action\ne.g. DEPOSIT_LP"] --> B["EIP-712 Sign\nTradeIntent"]
+    B --> C["RiskRouter.submitTradeIntent()\nVerify sig · Check limits · Approve"]
+    C --> D["Kraken CLI Execute\npaper sell WETHUSD"]
+    D --> E["ValidationRegistry.postEIP712Attestation()\ncheckpointHash · score 100"]
+    E --> F["Supabase audit_logs\nPersist for dashboard"]
+    F --> G["ReputationRegistry\n+score per successful cycle"]
+    G --> H["On-Chain Leaderboard\nPnL · Sharpe · Validation Score"]
+```
+
+---
+
+## Hackathon Requirements — Completion Status
+
+### 🎯 Kraken Challenge
+
+| Requirement | Status | Proof |
+|---|---|---|
+| Uses Kraken CLI to execute trades | ✅ | `kraken paper sell WETHUSD 41.15 --ordertype market` |
+| AI-driven strategy analyzing signals | ✅ | Pool scoring: APR×0.6 + TVL×0.2 - Vol×0.2 |
+| Autonomous workflow | ✅ | Orchestrator loop, 10s polling |
+| Read-only API key for leaderboard | ✅ | Configured in env |
+
+### 🔗 ERC-8004 Challenge
+
+| Requirement | Status | Proof |
+|---|---|---|
+| Register identity on ERC-8004 Identity Registry | ✅ | Agent ID 5 · [Etherscan ↗](https://sepolia.etherscan.io/tx/0xce9b690f7a314063666da709eb838368786a78be25a7e046ec550334f81d5f03) |
+| EIP-712 typed data signatures | ✅ | Every trade intent + validation artifact |
+| EIP-155 chain-id binding | ✅ | chainId: 11155111 in all signatures |
+| Execute via Risk Router | ✅ | [Router Tx ↗](https://sepolia.etherscan.io/tx/0xf85c84030d1b644eb7205cdce07696c9836b41f6e2d968512f124dc8076801a5) |
+| Accumulate measurable reputation | ✅ | [Reputation Tx ↗](https://sepolia.etherscan.io/tx/0x3a53ddb83813201501afa3a81a2234f5b4a0546df2c68ee1a64c40af796788f6) · Score: 98/100 |
+| Validation artifacts for key actions | ✅ | [Attestation Tx ↗](https://sepolia.etherscan.io/tx/0x7885d59bcb130587655fe08d148936facc709a59df081fe04a5d5fc360fa9d20) |
+| Capital Sandbox (HackathonVault) | ✅ | `0xEf7BF90aFD82cA2fc0d09aCbDD41B22038B04f1F` |
+
+---
+
+## Deployed Contracts — Sepolia Testnet
+
+| Contract | Address | Etherscan |
+|---|---|---|
+| AgentRegistry (ERC-8004) | `0x483066372b6DBbeef80702FAf0D6b28677fBe178` | [View ↗](https://sepolia.etherscan.io/address/0x483066372b6DBbeef80702FAf0D6b28677fBe178) |
+| RiskRouter | `0x8E575a59C6A7bA3FB714e726E4a24e4BA10B1EDa` | [View ↗](https://sepolia.etherscan.io/address/0x8E575a59C6A7bA3FB714e726E4a24e4BA10B1EDa) |
+| ValidationRegistry | `0x7C9f58a1f5Ed4D654A7E63a0142Bb6912DCBb121` | [View ↗](https://sepolia.etherscan.io/address/0x7C9f58a1f5Ed4D654A7E63a0142Bb6912DCBb121) |
+| ReputationRegistry | `0x4223c83DeC37c0e74BA9c227fe8F643c50008028` | [View ↗](https://sepolia.etherscan.io/address/0x4223c83DeC37c0e74BA9c227fe8F643c50008028) |
+| HackathonVault | `0xEf7BF90aFD82cA2fc0d09aCbDD41B22038B04f1F` | [View ↗](https://sepolia.etherscan.io/address/0xEf7BF90aFD82cA2fc0d09aCbDD41B22038B04f1F) |
+
+**Agent Identity:** Token ID `5` · Operator: `0x8bB9b052ad7ec275b46bfcDe425309557EFFAb07`
+
+---
+
+## On-Chain Proof Transactions
+
+| Event | Transaction | Status |
+|---|---|---|
+| Agent Registered (ERC-721 Mint) | [`0xce9b...d5f03`](https://sepolia.etherscan.io/tx/0xce9b690f7a314063666da709eb838368786a78be25a7e046ec550334f81d5f03) | ✅ Success |
+| Risk Router Approval | [`0xf85c...801a5`](https://sepolia.etherscan.io/tx/0xf85c84030d1b644eb7205cdce07696c9836b41f6e2d968512f124dc8076801a5) | ✅ Success |
+| Validation Attestation Posted | [`0x7885...fa9d20`](https://sepolia.etherscan.io/tx/0x7885d59bcb130587655fe08d148936facc709a59df081fe04a5d5fc360fa9d20) | ✅ Success |
+| Reputation Score Submitted (98/100) | [`0x3a53...788f6`](https://sepolia.etherscan.io/tx/0x3a53ddb83813201501afa3a81a2234f5b4a0546df2c68ee1a64c40af796788f6) | ✅ Success |
+
+---
+
+## Tech Stack
+
+```
+Frontend      Next.js 16 · React 19 · Tailwind v4 · Framer Motion
+Blockchain    ethers v6 · viem · Solidity ^0.8.24 · OpenZeppelin
+Execution     Kraken CLI (Rust binary) · Paper Trading Sandbox
+Data          Supabase (PostgreSQL) · Real-time subscriptions
+Signals       PRISM API (volatility · risk · market data)
+LP Protocol   Aerodrome Finance (Base chain)
+Standards     ERC-8004 · EIP-712 · EIP-155 · ERC-721
+```
+
+---
+
+## Project Structure
+
+```
 yieldmind/
-├── agents/
-│   ├── scanner.py          # Pool scoring
-│   ├── hedger.py           # Kraken CLI integration  
-│   ├── orchestrator.py     # LangGraph main loop
-│   └── auditor.js          # EIP-712 signing + ERC-8004
+├── src/
+│   ├── app/
+│   │   ├── page.tsx                    # Live dashboard
+│   │   └── api/agent/
+│   │       ├── cycle/route.ts          # POST → run orchestrator cycle
+│   │       └── logs/route.ts           # GET → fetch audit logs
+│   ├── lib/
+│   │   ├── agent/
+│   │   │   ├── orchestrator.ts         # Main cycle loop
+│   │   │   ├── scanner.ts              # Aerodrome pool scoring
+│   │   │   ├── hedger.ts               # Kraken CLI execution
+│   │   │   └── auditor.ts              # EIP-712 + on-chain posting
+│   │   └── supabase/
+│   │       ├── client.ts               # Anon + service role clients
+│   │       └── db.ts                   # audit_logs · agents · perf_stats
+│   └── components/Dashboard/
+│       ├── DeltaGauge.tsx              # Live delta visualization
+│       ├── PoolStatus.tsx              # Current LP pool stats
+│       ├── AuditLogs.tsx               # ERC-8004 audit trail
+│       └── AgentCommandCenter.tsx      # Start/stop controls
 ├── contracts/
-│   ├── AgentIdentity.sol   # ERC-8004 identity
-│   ├── ReputationRegistry.sol
-│   └── RiskManifesto.sol   # On-chain rules
+│   ├── AgentRegistry.sol               # ERC-8004 identity (ERC-721)
+│   ├── RiskRouter.sol                  # EIP-712 TradeIntent validation
+│   ├── ValidationRegistry.sol          # Attestation store
+│   ├── ReputationRegistry.sol          # On-chain reputation
+│   └── HackathonVault.sol              # Capital sandbox
 ├── scripts/
-│   ├── deploy.js           # Deploy to Sepolia
-│   └── register_agent.js   # Mint agent identity
-├── dashboard/
-│   └── index.html          # Live delta + PnL display
-└── README.md
+│   ├── register-agent.ts               # Mint agent identity
+│   ├── submit-reputation.ts            # Post reputation score
+│   ├── test-cycle.ts                   # Run full agent cycle
+│   └── push-schema.ts                  # Push Supabase schema
+├── kraken-cli/                         # Rust binary (built)
+│   └── target/release/kraken           # ← executable
+└── supabase/migrations/
+    └── 20260409000000_init.sql         # agents · audit_logs · perf_stats
+```
 
-🏆 Prize Targeting Strategy
-Prize	How YieldMind Qualifies
-Best Yield/Portfolio Agent ($2,500)	Core product — delta-neutral LP yield optimization
-Best Compliance & Risk Guardrails ($2,500)	On-chain delta limits + circuit breaker if drift > 20%
-Kraken PnL Leaderboard	Real trades executed via Kraken CLI
-Social Engagement	Post delta charts + yield reports every 4h
-⏱️ 5-Day Build Schedule
-Day	Task
-Day 1	Deploy ERC-8004 contracts on Sepolia, register agent identity
-Day 2	Build SCANNER — Aerodrome pool scoring with PRISM signals
-Day 3	Build HEDGER — Kraken CLI short execution + delta math
-Day 4	Build AUDITOR — EIP-712 artifacts, wire LangGraph orchestrator
-Day 5	Dashboard + demo video + post social content + submit
-💡 Demo Script (The Money Shot)
+---
 
-For your video demo, show this sequence live:
+## Quick Start
 
-    Agent finds ETH/USDC pool at 42% APR on Aerodrome
-    Deposits $500 → immediately opens $250 short on Kraken
-    Simulate ETH price drop 8% → show impermanent loss = near zero because hedge covered it
-    PRISM volatility signal spikes → agent tightens LP range + increases hedge
-    Show the signed ERC-8004 artifact on Sepolia Etherscan
-    Show reputation score increasing on-chain after successful cycle
+```bash
+# 1. Install dependencies
+npm install
 
-That 2-minute demo tells a complete story that no other team can match.
+# 2. Configure environment
+cp .env.example .env.local
+# Fill in: PRIVATE_KEY, KRAKEN_API_KEY/SECRET, SUPABASE keys
+
+# 3. Build Kraken CLI
+cd kraken-cli && cargo build --release && cd ..
+
+# 4. Push database schema
+npx tsx --env-file=.env.local scripts/push-schema.ts
+
+# 5. Register agent on-chain
+npx tsx --env-file=.env.local scripts/register-agent.ts
+
+# 6. Run a test cycle
+npx tsx --env-file=.env.local scripts/test-cycle.ts
+
+# 7. Start dashboard
+npm run dev
+```
+
+---
+
+## Demo Script
+
+The 2-minute money shot for judges:
+
+1. Dashboard loads → shows Agent ID 5, delta gauge at ~0%, reputation 98/100
+2. Click **Initialize Operation** → agent scans Aerodrome, finds WETH/USDC at 38.4% APR
+3. Risk Router approves the TradeIntent on-chain (Sepolia tx visible)
+4. Kraken CLI executes the short hedge → delta neutralized
+5. EIP-712 artifact posted to ValidationRegistry → Etherscan link appears in audit log
+6. Simulate price drop → delta drifts → agent auto-rebalances → new artifact posted
+7. Reputation score increments on-chain
+
+---
+
+## Prize Targeting
+
+| Prize | Amount | How YieldMind Qualifies |
+|---|---|---|
+| Best Trustless Trading Agent | $10,000 | Full ERC-8004 stack · Risk Router · Reputation · Validation |
+| Best Yield / Portfolio Agent | $2,500 | Delta-neutral LP optimization on Aerodrome |
+| Best Compliance & Risk Guardrails | $2,500 | On-chain position limits · circuit breaker at 20% drift |
+| Kraken PnL Leaderboard | $1,800 | Live trades via Kraken CLI |
+| Social Engagement | $1,200 | Build-in-public posts |
+
+**Total addressable: $19,000**
+
+---
+
+<div align="center">
+
+Built for the **lablab.ai × Surge × Kraken** Hackathon · April 2026
+
+*Every trade. Every hedge. Every rebalance. Proven on-chain.*
+
+</div>
