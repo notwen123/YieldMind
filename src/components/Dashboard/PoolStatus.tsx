@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, Shield, Activity, Droplets } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
+import { Droplets } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { OnyxCard, GlassStat } from '@/components/UI/EmberKit';
 
 interface PoolStatusProps {
   poolName: string;
@@ -12,59 +12,52 @@ interface PoolStatusProps {
   volatility: number;
 }
 
-import { OnyxCard } from '@/components/UI/EmberKit';
-
 export const PoolStatus: React.FC<PoolStatusProps> = ({ poolName, apr, tvl, volatility }) => {
   return (
-    <OnyxCard className="bg-background/60 transition-colors duration-500">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-orange/10 rounded-full flex items-center justify-center border border-brand-orange/20">
-            <Droplets className="w-5 h-5 text-brand-orange" />
+    <OnyxCard className="relative overflow-hidden group border-border shadow-none">
+      {/* Dynamic Status Header */}
+      <div className="flex items-center justify-between mb-10 relative z-10">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-foreground/[0.03] rounded-2xl flex items-center justify-center border border-border/10 shadow-inner group-hover:border-brand-orange/30 transition-colors duration-500">
+            <Droplets className="w-6 h-6 text-brand-orange" />
           </div>
           <div>
-            <h3 className="text-foreground font-bold text-lg font-outfit">{poolName}</h3>
-            <span className="text-zinc-500 text-xs font-medium uppercase tracking-widest">Base · Aerodrome Finance</span>
+            <h3 className="text-foreground font-black text-xl font-outfit uppercase tracking-tighter">{poolName}</h3>
+            <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.25em]">Base · Aerodrome Institutional</span>
           </div>
         </div>
-        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-          <span className="text-emerald-500 text-[10px] font-black uppercase tracking-widest leading-none">Active Harvesting</span>
+        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
+          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-emerald-500 text-[8px] font-black uppercase tracking-widest leading-none">Live Harvesting</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="p-6 bg-foreground/[0.03] rounded-2xl border border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-zinc-500" />
-            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">Fee APR</span>
-          </div>
-          <span className="text-2xl font-black text-foreground tabular-nums font-outfit">{apr.toFixed(2)}%</span>
-        </div>
-
-        <div className="p-6 bg-foreground/[0.03] rounded-2xl border border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-zinc-500" />
-            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">TVL</span>
-          </div>
-          <span className="text-2xl font-black text-foreground tabular-nums font-outfit">{formatCurrency(tvl / 1_000_000)}M</span>
-        </div>
-
-        <div className="p-6 bg-foreground/[0.03] rounded-2xl border border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-4 h-4 text-zinc-500" />
-            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">Volatility</span>
-          </div>
-          <span className="text-2xl font-black text-foreground tabular-nums font-outfit">{(volatility * 100).toFixed(1)}%</span>
-        </div>
-
-        <div className="p-6 bg-brand-orange/5 rounded-2xl border border-brand-orange/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Droplets className="w-4 h-4 text-brand-orange" />
-            <span className="text-brand-orange text-[10px] font-black uppercase tracking-wider">Hedge Ratio</span>
-          </div>
-          <span className="text-2xl font-black text-brand-orange tabular-nums font-outfit">1:1</span>
-        </div>
+      {/* Institutional Diagnostic Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+        <GlassStat 
+          label="Incentive APR" 
+          value={`${apr.toFixed(2)}%`} 
+          trend="+2.4%" 
+        />
+        <GlassStat 
+          label="Active TVL" 
+          value={`${formatCurrency(tvl / 1_000_000)}M`} 
+          trend="$125M Cap" 
+        />
+        <GlassStat 
+          label="Risk Offset" 
+          value={`${(volatility * 100).toFixed(1)}%`} 
+          trend="0.18σ (99%)" 
+        />
+        <GlassStat 
+          label="Hedge Ratio" 
+          value="1:1 DELTA" 
+          trend="0.18σ (99%)" 
+        />
       </div>
+
+      {/* Internal Atmospheric Trace */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-brand-orange/[0.02] blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
     </OnyxCard>
   );
 };

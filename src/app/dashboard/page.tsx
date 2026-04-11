@@ -19,7 +19,7 @@ import {
   Search,
   ChevronRight
 } from 'lucide-react';
-import { OnyxCard, EmberButton } from '@/components/UI/EmberKit';
+import { OnyxCard, EmberButton, GlassStat } from '@/components/UI/EmberKit';
 import { DeltaGauge } from '@/components/Dashboard/DeltaGauge';
 import { PoolStatus } from '@/components/Dashboard/PoolStatus';
 import { AuditLogs, AuditLog } from '@/components/Dashboard/AuditLogs';
@@ -46,30 +46,39 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground/70 font-inter selection:bg-brand-orange/10 overflow-x-hidden transition-colors duration-200">
       
-      {/* Clinical Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-20 border-r border-border flex flex-col items-center py-8 gap-10 bg-background z-50">
-        <div className="w-10 h-10 bg-brand-orange rounded-xl flex items-center justify-center text-white shadow-lg">
-          <BrainCircuit className="w-6 h-6" />
+      {/* Clinical Sidebar - Horizontal Expansion */}
+      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border flex flex-col py-8 px-6 bg-background z-50">
+        <div className="flex items-center gap-4 mb-12">
+          <div className="w-10 h-10 bg-brand-orange rounded-xl flex items-center justify-center text-white shrink-0">
+            <BrainCircuit className="w-6 h-6" />
+          </div>
+          <span className="text-xl font-black text-foreground font-outfit uppercase tracking-tight">YieldMind</span>
         </div>
         
-        <nav className="flex flex-col gap-6">
-          <SidebarIcon icon={LayoutDashboard} active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
-          <SidebarIcon icon={Wallet} active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} />
-          <SidebarIcon icon={Terminal} active={activeTab === 'terminal'} onClick={() => setActiveTab('terminal')} />
-          <SidebarIcon icon={Settings} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        <nav className="flex flex-col gap-2">
+          <SidebarIcon icon={LayoutDashboard} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+          <SidebarIcon icon={Wallet} label="Sovereign Wallet" active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} />
+          <SidebarIcon icon={Terminal} label="Agent Terminal" active={activeTab === 'terminal'} onClick={() => setActiveTab('terminal')} />
+          <SidebarIcon icon={Settings} label="Engine Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </nav>
 
-        <div className="mt-auto flex flex-col gap-6 items-center">
+        <div className="mt-auto flex flex-col gap-4">
           <ThemeToggle />
-          <SidebarIcon icon={Bell} />
-          <div className="w-10 h-10 rounded-full bg-zinc-900 border border-border flex items-center justify-center text-[10px] font-black text-zinc-500">
-            YM
+          <SidebarIcon icon={Bell} label="Notifications" />
+          <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="w-8 h-8 rounded-full bg-zinc-900 border border-border flex items-center justify-center text-[10px] font-black text-zinc-500 shrink-0">
+              YM
+            </div>
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[10px] font-black text-foreground uppercase truncate">Admin Core</span>
+              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Sepolia Node</span>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Body */}
-      <main className="ml-20 p-8 max-w-[1600px] mx-auto">
+      {/* Main Body - Adjusted for wider sidebar */}
+      <main className="ml-64 p-8 max-w-[1600px] mx-auto">
         
         {/* Compact Header */}
         <header className="flex items-center justify-between mb-12 border-b border-border pb-8">
@@ -135,19 +144,20 @@ function OverviewTab({ logs }: { logs: any[] }) {
         />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <StatCompact title="Protocol Reputation" value="98.2" color="text-brand-orange" />
-          <StatCompact title="Hedge Accuracy" value="99.8%" color="text-emerald-500" />
+          <StatCompact title="Hedge Accuracy" value="99.8%" trend="+0.1%" />
           <StatCompact title="Total Vaults" value="42" />
         </div>
       </div>
       <div className="col-span-12 lg:col-span-4">
-        <OnyxCard className="h-full border-border bg-transparent shadow-none">
-          <h3 className="text-xs font-black uppercase tracking-widest text-foreground mb-6 flex items-center gap-2">
+        <OnyxCard className="h-full">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground mb-8 flex items-center gap-2">
             <Cpu className="w-3 h-3 text-brand-orange" /> AI Cognition
           </h3>
-          <div className="space-y-6">
+          <div className="space-y-8">
             <IntelligenceItem time="12:45" status="SCAN" text="Analyzing Aerodrome/Base APR spread." />
             <IntelligenceItem time="12:44" status="HEDGE" text="Balancing delta via Kraken engine." />
             <IntelligenceItem time="12:42" status="AUDIT" text="Trade checkpoint verified on-chain." />
+            <IntelligenceItem time="12:40" status="SYNC" text="Node health verified at 99.9%." />
           </div>
         </OnyxCard>
       </div>
@@ -162,12 +172,15 @@ function TerminalTab({ logs, isAuto, onToggle }: { logs: any[], isAuto: boolean,
         <AgentControlPanel isActive={isAuto} onToggle={onToggle} />
       </div>
       <div className="col-span-12 lg:col-span-8">
-        <OnyxCard className="border-border bg-transparent shadow-none">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
-              <Terminal className="w-3 h-3" /> Auditor Execution Stream
+        <OnyxCard>
+          <div className="flex items-center justify-between mb-10">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-brand-orange" /> Auditor Execution Stream
             </h3>
-            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Live On-Chain Trace</span>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live Trace</span>
+            </div>
           </div>
           <AuditLogs logs={logs} />
         </OnyxCard>
@@ -179,22 +192,14 @@ function TerminalTab({ logs, isAuto, onToggle }: { logs: any[], isAuto: boolean,
 function WalletTab() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <OnyxCard className="p-8 border-border bg-transparent shadow-none">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 font-outfit">Sovereign Asset: ETH</h4>
-        <div className="flex items-baseline justify-between">
-          <span className="text-3xl font-black text-foreground font-outfit tabular-nums tracking-tighter">12.45 ETH</span>
-          <span className="text-xs font-bold text-zinc-400">$30,502.50</span>
-        </div>
+      <OnyxCard className="p-10">
+        <GlassStat label="Sovereign Asset: ETH" value="12.45 ETH" trend="$30.5K" />
       </OnyxCard>
-      <OnyxCard className="p-8 border-border bg-transparent shadow-none">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 font-outfit">Sovereign Asset: USDC</h4>
-        <div className="flex items-baseline justify-between">
-          <span className="text-3xl font-black text-foreground font-outfit tabular-nums tracking-tighter">50,000.00</span>
-          <span className="text-xs font-bold text-zinc-400">$50,000.00</span>
-        </div>
+      <OnyxCard className="p-10">
+        <GlassStat label="Sovereign Asset: USDC" value="50,000.00" trend="$50K" />
       </OnyxCard>
-      <OnyxCard className="p-8 border-border bg-transparent shadow-none border-dashed flex items-center justify-center opacity-40">
-        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">+ Add Network Asset</span>
+      <OnyxCard className="p-10 border-dashed border-border/20 flex items-center justify-center group cursor-pointer hover:border-brand-orange/40 transition-colors duration-500">
+        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 group-hover:text-brand-orange">+ Add Network Asset</span>
       </OnyxCard>
     </div>
   );
@@ -202,17 +207,23 @@ function WalletTab() {
 
 function SettingsTab() {
   return (
-    <div className="max-w-xl space-y-8">
-      <OnyxCard className="border-border bg-transparent shadow-none">
-        <h3 className="text-xs font-black uppercase tracking-widest text-foreground mb-6">Autonomous Configuration</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-border rounded-xl">
-            <span className="text-sm font-bold text-zinc-500">Delta Drift Tolerance</span>
-            <span className="text-sm font-black text-brand-orange">0.05%</span>
+    <div className="max-w-2xl space-y-8">
+      <OnyxCard>
+        <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground mb-10">Autonomous Engine Configuration</h3>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-6 border border-border/10 rounded-2xl bg-foreground/[0.02] hover:bg-foreground/[0.04] transition-colors group cursor-default">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-foreground mb-1">Delta Drift Tolerance</span>
+              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Max variance before rebalance</span>
+            </div>
+            <span className="text-lg font-black text-brand-orange font-outfit">0.05%</span>
           </div>
-          <div className="flex items-center justify-between p-4 border border-border rounded-xl">
-            <span className="text-sm font-bold text-zinc-500">Auto-Compound Interval</span>
-            <span className="text-sm font-black text-foreground tracking-tighter">6 HOURS</span>
+          <div className="flex items-center justify-between p-6 border border-border/10 rounded-2xl bg-foreground/[0.02] hover:bg-foreground/[0.04] transition-colors group cursor-default">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-foreground mb-1">Auto-Compound Interval</span>
+              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Harvest & Restake Frequency</span>
+            </div>
+            <span className="text-lg font-black text-foreground font-outfit uppercase tracking-tighter">6 HOURS</span>
           </div>
         </div>
       </OnyxCard>
@@ -222,38 +233,38 @@ function SettingsTab() {
 
 // --- SHARED REFINED COMPONENTS ---
 
-function SidebarIcon({ icon: Icon, active = false, onClick }: { icon: React.ElementType, active?: boolean, onClick?: () => void }) {
+function SidebarIcon({ icon: Icon, label, active = false, onClick }: { icon: React.ElementType, label?: string, active?: boolean, onClick?: () => void }) {
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "p-4 rounded-xl transition-all duration-200 cursor-pointer group border",
+        "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 cursor-pointer group border border-transparent",
         active 
-          ? "bg-foreground text-background border-foreground shadow-sm" 
-          : "text-zinc-500 hover:bg-foreground/5 border-transparent"
+          ? "bg-foreground text-background border-foreground shadow-[0_8px_20px_rgba(0,0,0,0.1)] scale-[1.02]" 
+          : "text-zinc-500 hover:bg-foreground/5 hover:border-border/40 hover:text-foreground"
     )}>
-      <Icon className="w-5 h-5" />
+      <Icon className="w-5 h-5 shrink-0" />
+      {label && <span className="text-[11px] font-bold uppercase tracking-[0.15em] whitespace-nowrap">{label}</span>}
     </div>
   );
 }
 
 function IntelligenceItem({ time, status, text }: { time: string, status: string, text: string }) {
   return (
-    <div className="flex gap-4 border-b border-border/10 pb-4 last:border-0 last:pb-0">
-      <div className="text-[9px] text-zinc-500 font-mono font-bold">{time}</div>
-      <div>
-        <div className="text-[8px] font-black text-brand-orange tracking-widest uppercase mb-0.5">{status}</div>
-        <div className="text-xs text-zinc-400 font-medium leading-relaxed">{text}</div>
+    <div className="flex gap-6 group">
+      <div className="text-[10px] text-zinc-600 font-mono font-bold pt-1">{time}</div>
+      <div className="flex flex-col">
+        <div className="text-[9px] font-extrabold text-brand-orange tracking-[0.3em] uppercase mb-1.5 opacity-80 group-hover:opacity-100 transition-opacity">{status}</div>
+        <div className="text-[13px] text-zinc-400 font-medium leading-relaxed group-hover:text-foreground transition-colors">{text}</div>
       </div>
     </div>
   );
 }
 
-function StatCompact({ title, value, color = "text-foreground" }: { title: string, value: string, color?: string }) {
+function StatCompact({ title, value, color = "text-foreground", trend }: { title: string, value: string, color?: string, trend?: string }) {
   return (
-    <OnyxCard className="p-6 border-border bg-transparent shadow-none">
-      <h4 className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] mb-4">{title}</h4>
-      <span className={cn("text-2xl font-black tabular-nums font-outfit tracking-tighter", color)}>{value}</span>
+    <OnyxCard className="p-8">
+      <GlassStat label={title} value={value} trend={trend} />
     </OnyxCard>
   );
 }

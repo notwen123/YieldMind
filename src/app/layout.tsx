@@ -28,7 +28,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground transition-colors duration-500 selection:bg-brand-orange/10 overflow-x-hidden">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <BlockchainProvider>
             <SmoothScroll>
               {children}

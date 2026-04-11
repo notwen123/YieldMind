@@ -23,35 +23,42 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
   };
 
   return (
-    <OnyxCard className="bg-background/60 transition-colors duration-500 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-6">
+    <OnyxCard className="relative overflow-hidden group border-border shadow-none">
+      {/* Precision Vital Sign */}
+      <div className="absolute top-8 right-8 flex items-center gap-2">
+        <span className={cn(
+          "text-[8px] font-black uppercase tracking-[0.2em] transition-colors duration-500",
+          isActive ? "text-emerald-500" : "text-zinc-600"
+        )}>
+          {isActive ? "Engine Active" : "Standby"}
+        </span>
         <div className={cn(
-          "w-3 h-3 rounded-full animate-pulse ring-4 transition-all duration-1000",
-          isActive ? "bg-emerald-500 ring-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.4)]" : "bg-zinc-500 ring-transparent"
+          "w-2 h-2 rounded-full transition-all duration-1000",
+          isActive ? "bg-emerald-500 shadow-[0_0_12px_var(--glow-ember)] animate-pulse" : "bg-zinc-800"
         )} />
       </div>
 
-      <h3 className="text-foreground font-black text-xl mb-8 flex items-center gap-3 tracking-tight font-outfit">
-        <Zap className="w-6 h-6 text-brand-orange fill-brand-orange/20" />
-        Agent Command <span className="text-zinc-500/30 font-light">Center</span>
+      <h3 className="text-foreground font-black text-xl mb-10 flex items-center gap-3 tracking-tighter font-outfit uppercase">
+        <Zap className={cn("w-5 h-5 transition-colors duration-500", isActive ? "text-brand-orange" : "text-zinc-600")} />
+        Agent Command <span className="text-zinc-700">Center</span>
       </h3>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         <motion.button
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={onToggle}
           className={cn(
-            "w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 border shadow-2xl",
+            "w-full py-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 border",
             isActive 
-              ? "bg-foreground/5 border-rose-500/40 text-rose-500 hover:bg-rose-500/5" 
-              : "bg-brand-orange border-brand-orange/50 text-white hover:bg-brand-orange/90 shadow-brand-orange/30"
+              ? "bg-foreground/[0.03] border-rose-500/30 text-rose-500 hover:bg-rose-500/5 hover:border-rose-500/50" 
+              : "bg-brand-orange border-brand-orange/20 text-white hover:bg-brand-orange/90 glow-gate"
           )}
         >
           {isActive ? (
-            <><Pause className="w-5 h-5 fill-current" /> Deactivate Agent</>
+            <><Pause className="w-4 h-4 fill-current" /> Terminate Operation</>
           ) : (
-            <><Play className="w-5 h-5 fill-current" /> Initialize Operation</>
+            <><Play className="w-4 h-4 fill-current" /> Initialize Sequence</>
           )}
         </motion.button>
 
@@ -59,43 +66,56 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
           <button
             onClick={triggerRebalance}
             disabled={!isActive || isRebalancing}
-            className="py-4 rounded-2xl bg-foreground/[0.05] border border-border text-zinc-500 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-foreground/[0.08] hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
+            className="py-4 rounded-xl bg-foreground/[0.03] border border-border/10 text-zinc-500 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
           >
             <motion.div
               animate={isRebalancing ? { rotate: 360 } : {}}
               transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
             >
-              <RefreshCcw className="w-4 h-4" />
+              <RefreshCcw className="w-3.5 h-3.5" />
             </motion.div>
-            Sync Delta
+            Delta Sync
           </button>
 
           <button
             disabled={!isActive}
-            className="py-4 rounded-2xl bg-foreground/[0.05] border border-border text-zinc-500 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-rose-500/10 hover:text-rose-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
+            className="py-4 rounded-xl bg-foreground/[0.03] border border-border/10 text-zinc-500 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/10 hover:text-rose-500 disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
           >
-            <ShieldAlert className="w-4 h-4" />
+            <ShieldAlert className="w-3.5 h-3.5" />
             Liquidate
           </button>
         </div>
       </div>
 
-      <div className="mt-8 pt-8 border-t border-border space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.25em]">Kraken CLI Engine</span>
-          <span className="text-emerald-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Operational
-          </span>
+      <div className="mt-10 pt-10 border-t border-border/5 space-y-4">
+        <div className="flex items-center justify-between group/status">
+          <div className="flex flex-col">
+            <span className="text-zinc-600 text-[8px] font-black uppercase tracking-[0.25em] mb-1">Compute Environment</span>
+            <span className="text-[10px] font-bold text-foreground font-outfit uppercase">Kraken CLI Engine v4</span>
+          </div>
+          <div className="flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <div className="w-1 h-1 rounded-full bg-emerald-500" />
+            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live</span>
+          </div>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.25em]">Aerodrome LP Feed</span>
-          <span className="text-emerald-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Synced
-          </span>
+        
+        <div className="flex items-center justify-between group/status">
+          <div className="flex flex-col">
+            <span className="text-zinc-600 text-[8px] font-black uppercase tracking-[0.25em] mb-1">Liquidity Feed</span>
+            <span className="text-[10px] font-bold text-foreground font-outfit uppercase">Aerodrome Base LP</span>
+          </div>
+          <div className="flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <div className="w-1 h-1 rounded-full bg-emerald-500" />
+            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Active</span>
+          </div>
         </div>
       </div>
+
+      {/* Internal Atmos Glow */}
+      <div className={cn(
+        "absolute -left-20 -bottom-20 w-48 h-48 blur-[100px] rounded-full transition-all duration-[2000ms] pointer-events-none",
+        isActive ? "bg-emerald-500/10 opacity-100" : "bg-brand-orange/5 opacity-0"
+      )} />
     </OnyxCard>
   );
 };
