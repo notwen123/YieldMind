@@ -16,7 +16,8 @@ import {
   Activity,
   Cpu,
   Shield,
-  Search
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import { OnyxCard, EmberButton } from '@/components/UI/EmberKit';
 import { DeltaGauge } from '@/components/Dashboard/DeltaGauge';
@@ -27,7 +28,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { ThemeToggle } from '@/components/Navigation/ThemeToggle';
 
 export default function Dashboard() {
-  const [agentState, setAgentState] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isAuto, setIsAuto] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -40,203 +41,219 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!isAuto) return;
-    let interval: any;
-
-    const fetchCycle = async () => {
-      try {
-        const res = await fetch('/api/agent/cycle');
-        const state = await res.json();
-        setAgentState(state);
-
-        if (state.lastAction && state.lastAction !== 'MONITOR_IDLE' && state.lastAction !== 'IDLE') {
-          fetch('/api/agent/logs')
-            .then(r => r.json())
-            .then(setLogs)
-            .catch(() => {});
-        }
-      } catch (e) {
-        console.error('Dashboard fetch failed:', e);
-      }
-    };
-
-    fetchCycle();
-    interval = setInterval(fetchCycle, 10000);
-    return () => clearInterval(interval);
-  }, [isAuto]);
-
   if (!isMounted) return null;
 
-  const currentPool = agentState?.currentPool || {
-    token0: 'ETH',
-    token1: 'USDC',
-    apr: 42.85,
-    tvl: 125000000,
-    score: 88,
-    price: 2450
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground/70 font-inter selection:bg-brand-orange/10 overflow-x-hidden transition-colors duration-500">
-      {/* Sidebar - Pearl Frost */}
-      <aside className="fixed left-0 top-0 bottom-0 w-24 border-r border-border flex flex-col items-center py-10 gap-12 bg-background/60 backdrop-blur-3xl z-50 shadow-sm transition-colors duration-500">
-        <div className="w-14 h-14 bg-brand-orange rounded-2xl flex items-center justify-center text-white shadow-[0_8px_24px_rgba(255,107,0,0.2)]">
-          <BrainCircuit className="w-8 h-8" />
+    <div className="min-h-screen bg-background text-foreground/70 font-inter selection:bg-brand-orange/10 overflow-x-hidden transition-colors duration-200">
+      
+      {/* Clinical Sidebar */}
+      <aside className="fixed left-0 top-0 bottom-0 w-20 border-r border-border flex flex-col items-center py-8 gap-10 bg-background z-50">
+        <div className="w-10 h-10 bg-brand-orange rounded-xl flex items-center justify-center text-white shadow-lg">
+          <BrainCircuit className="w-6 h-6" />
         </div>
         
-        <nav className="flex flex-col gap-8">
-          <SidebarIcon icon={LayoutDashboard} active />
-          <SidebarIcon icon={Wallet} />
-          <SidebarIcon icon={Terminal} />
-          <SidebarIcon icon={Settings} />
+        <nav className="flex flex-col gap-6">
+          <SidebarIcon icon={LayoutDashboard} active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+          <SidebarIcon icon={Wallet} active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} />
+          <SidebarIcon icon={Terminal} active={activeTab === 'terminal'} onClick={() => setActiveTab('terminal')} />
+          <SidebarIcon icon={Settings} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </nav>
 
-        <div className="mt-auto flex flex-col gap-8 items-center">
+        <div className="mt-auto flex flex-col gap-6 items-center">
           <ThemeToggle />
           <SidebarIcon icon={Bell} />
-          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-orange to-orange-400 border border-border p-[2px] shadow-sm">
-            <div className="w-full h-full bg-foreground/10 rounded-full" />
+          <div className="w-10 h-10 rounded-full bg-zinc-900 border border-border flex items-center justify-center text-[10px] font-black text-zinc-500">
+            YM
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="ml-24 p-12 max-w-[1700px] mx-auto">
-        {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-16 gap-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="px-3 py-1 rounded-full text-[10px] bg-foreground/5 text-brand-orange border border-border font-black uppercase tracking-[0.2em] leading-none h-fit">Network: Sepolia</span>
-              <h1 className="text-4xl font-black text-foreground tracking-tight flex items-center gap-3 font-outfit">
-                YieldMind <span className="text-zinc-200 font-light">/</span> <span className="text-zinc-400 font-medium">Alpha Terminal</span>
+      {/* Main Body */}
+      <main className="ml-20 p-8 max-w-[1600px] mx-auto">
+        
+        {/* Compact Header */}
+        <header className="flex items-center justify-between mb-12 border-b border-border pb-8">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2 font-outfit uppercase">
+                YieldMind <span className="text-zinc-600">/</span> <span className="text-brand-orange">{activeTab}</span>
               </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Functional // Sepolia</span>
+              </div>
             </div>
-            <p className="text-zinc-400 text-sm font-semibold tracking-wide">Autonomous Delta-Neutral Liquidity via Kraken CLI</p>
           </div>
 
-          <div className="flex items-center gap-10 bg-background/40 p-6 rounded-[40px] border border-border shadow-sm backdrop-blur-3xl transition-colors duration-500">
-            <div className="flex flex-col items-end">
-              <span className="text-zinc-400 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Managed Equity</span>
-              <span className="text-3xl font-black text-foreground tabular-nums font-outfit">{formatCurrency(agentState?.portfolioValue || 245800)}</span>
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-6 text-right">
+              <div>
+                <span className="block text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Managed Equity</span>
+                <span className="block text-xl font-black text-foreground tabular-nums font-outfit">$245,800.00</span>
+              </div>
+              <div className="w-px h-8 bg-border" />
+              <div>
+                <span className="block text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Session Yield</span>
+                <span className="block text-xl font-black text-emerald-600 tabular-nums font-outfit">+$12,450.22</span>
+              </div>
             </div>
-            <div className="h-12 w-px bg-border" />
-            <div className="flex flex-col items-end">
-              <span className="text-zinc-400 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Total Yield</span>
-              <span className="text-3xl font-black text-emerald-600 tabular-nums font-outfit">+{formatCurrency(12450.22)}</span>
-            </div>
-            <div className="scale-110">
-              <ConnectButton chainStatus="icon" showBalance={false} accountStatus="avatar" />
-            </div>
+            <ConnectButton chainStatus="none" showBalance={false} accountStatus="avatar" />
           </div>
         </header>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-12 gap-10">
-          
-          {/* Intelligence Feed */}
-          <div className="col-span-12 lg:col-span-4">
-            <OnyxCard className="h-full bg-background/60">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-                  <Cpu className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground font-outfit tracking-tight">AI Cognition</h3>
-              </div>
-              <div className="space-y-6">
-                <IntelligenceItem time="12:45:01" status="SCANNING" text="Evaluating Aerodrome/Base APR spread..." />
-                <IntelligenceItem time="12:44:22" status="HEDGING" text="Rebalancing delta via Kraken engine." />
-                <IntelligenceItem time="12:42:15" status="AUDIT" text="Post-trade checkpoint verified on Sepolia." />
-                <IntelligenceItem time="12:40:00" status="IDLE" text="Monitoring liquidity depth for WETH/USDC." />
-              </div>
-            </OnyxCard>
-          </div>
-
-          <div className="col-span-12 lg:col-span-8">
-            <PoolStatus 
-              poolName={`${currentPool.token0} / ${currentPool.token1}`}
-              apr={currentPool.apr}
-              tvl={currentPool.tvl}
-              volatility={0.18}
-            />
-          </div>
-
-          {/* Controls */}
-          <div className="col-span-12 lg:col-span-4">
-            <AgentControlPanel 
-              isActive={isAuto} 
-              onToggle={() => setIsAuto(!isAuto)} 
-            />
-          </div>
-
-          {/* Logs */}
-          <div className="col-span-12 lg:col-span-8">
-            <OnyxCard className="h-full bg-background/60">
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground">
-                    <Activity className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground tracking-tight font-outfit">Auditor Execution Stream</h3>
-                </div>
-                <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Trust Engine: Active</span>
-                </div>
-              </div>
-              <AuditLogs logs={logs} />
-            </OnyxCard>
-          </div>
-        </div>
-
-        {/* Stats Strip */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <StatCard title="Protocol Reputation" value="98.2 / 100" change="+2.4" color="text-brand-orange" />
-          <StatCard title="Hedge Accuracy" value="99.8%" change="+0.1%" />
-          <StatCard title="Market Depth" value="$1.2M" change="+14%" />
-          <StatCard title="Trust Artifacts" value={logs.length.toString()} color="text-emerald-600" />
-        </div>
+        {/* Dynamic Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'overview' && <OverviewTab logs={logs} />}
+            {activeTab === 'terminal' && <TerminalTab logs={logs} isAuto={isAuto} onToggle={() => setIsAuto(!isAuto)} />}
+            {activeTab === 'wallet' && <WalletTab />}
+            {activeTab === 'settings' && <SettingsTab />}
+          </motion.div>
+        </AnimatePresence>
       </main>
+    </div>
+  );
+}
+
+// --- SUB-VIEWS (Clinical & Efficient) ---
+
+function OverviewTab({ logs }: { logs: any[] }) {
+  return (
+    <div className="grid grid-cols-12 gap-8 mt-4">
+      <div className="col-span-12 lg:col-span-8 space-y-8">
+        <PoolStatus 
+          poolName="ETH / USDC"
+          apr={42.85}
+          tvl={125000000}
+          volatility={0.18}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <StatCompact title="Protocol Reputation" value="98.2" color="text-brand-orange" />
+          <StatCompact title="Hedge Accuracy" value="99.8%" color="text-emerald-500" />
+          <StatCompact title="Total Vaults" value="42" />
+        </div>
+      </div>
+      <div className="col-span-12 lg:col-span-4">
+        <OnyxCard className="h-full border-border bg-transparent shadow-none">
+          <h3 className="text-xs font-black uppercase tracking-widest text-foreground mb-6 flex items-center gap-2">
+            <Cpu className="w-3 h-3 text-brand-orange" /> AI Cognition
+          </h3>
+          <div className="space-y-6">
+            <IntelligenceItem time="12:45" status="SCAN" text="Analyzing Aerodrome/Base APR spread." />
+            <IntelligenceItem time="12:44" status="HEDGE" text="Balancing delta via Kraken engine." />
+            <IntelligenceItem time="12:42" status="AUDIT" text="Trade checkpoint verified on-chain." />
+          </div>
+        </OnyxCard>
+      </div>
+    </div>
+  );
+}
+
+function TerminalTab({ logs, isAuto, onToggle }: { logs: any[], isAuto: boolean, onToggle: () => void }) {
+  return (
+    <div className="grid grid-cols-12 gap-8">
+      <div className="col-span-12 lg:col-span-4">
+        <AgentControlPanel isActive={isAuto} onToggle={onToggle} />
+      </div>
+      <div className="col-span-12 lg:col-span-8">
+        <OnyxCard className="border-border bg-transparent shadow-none">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+              <Terminal className="w-3 h-3" /> Auditor Execution Stream
+            </h3>
+            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Live On-Chain Trace</span>
+          </div>
+          <AuditLogs logs={logs} />
+        </OnyxCard>
+      </div>
+    </div>
+  );
+}
+
+function WalletTab() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <OnyxCard className="p-8 border-border bg-transparent shadow-none">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 font-outfit">Sovereign Asset: ETH</h4>
+        <div className="flex items-baseline justify-between">
+          <span className="text-3xl font-black text-foreground font-outfit tabular-nums tracking-tighter">12.45 ETH</span>
+          <span className="text-xs font-bold text-zinc-400">$30,502.50</span>
+        </div>
+      </OnyxCard>
+      <OnyxCard className="p-8 border-border bg-transparent shadow-none">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 font-outfit">Sovereign Asset: USDC</h4>
+        <div className="flex items-baseline justify-between">
+          <span className="text-3xl font-black text-foreground font-outfit tabular-nums tracking-tighter">50,000.00</span>
+          <span className="text-xs font-bold text-zinc-400">$50,000.00</span>
+        </div>
+      </OnyxCard>
+      <OnyxCard className="p-8 border-border bg-transparent shadow-none border-dashed flex items-center justify-center opacity-40">
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">+ Add Network Asset</span>
+      </OnyxCard>
+    </div>
+  );
+}
+
+function SettingsTab() {
+  return (
+    <div className="max-w-xl space-y-8">
+      <OnyxCard className="border-border bg-transparent shadow-none">
+        <h3 className="text-xs font-black uppercase tracking-widest text-foreground mb-6">Autonomous Configuration</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+            <span className="text-sm font-bold text-zinc-500">Delta Drift Tolerance</span>
+            <span className="text-sm font-black text-brand-orange">0.05%</span>
+          </div>
+          <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+            <span className="text-sm font-bold text-zinc-500">Auto-Compound Interval</span>
+            <span className="text-sm font-black text-foreground tracking-tighter">6 HOURS</span>
+          </div>
+        </div>
+      </OnyxCard>
+    </div>
+  );
+}
+
+// --- SHARED REFINED COMPONENTS ---
+
+function SidebarIcon({ icon: Icon, active = false, onClick }: { icon: React.ElementType, active?: boolean, onClick?: () => void }) {
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "p-4 rounded-xl transition-all duration-200 cursor-pointer group border",
+        active 
+          ? "bg-foreground text-background border-foreground shadow-sm" 
+          : "text-zinc-500 hover:bg-foreground/5 border-transparent"
+    )}>
+      <Icon className="w-5 h-5" />
     </div>
   );
 }
 
 function IntelligenceItem({ time, status, text }: { time: string, status: string, text: string }) {
   return (
-    <div className="flex gap-5 group">
-      <div className="text-[10px] text-zinc-400 font-mono pt-1.5 font-bold">{time}</div>
-      <div className="flex flex-col">
-        <div className="text-[9px] font-black text-brand-orange tracking-[0.2em] mb-1">{status}</div>
-        <div className="text-sm text-zinc-500 group-hover:text-foreground transition-colors font-medium">{text}</div>
+    <div className="flex gap-4 border-b border-border/10 pb-4 last:border-0 last:pb-0">
+      <div className="text-[9px] text-zinc-500 font-mono font-bold">{time}</div>
+      <div>
+        <div className="text-[8px] font-black text-brand-orange tracking-widest uppercase mb-0.5">{status}</div>
+        <div className="text-xs text-zinc-400 font-medium leading-relaxed">{text}</div>
       </div>
     </div>
   );
 }
 
-function SidebarIcon({ icon: Icon, active = false }: { icon: React.ElementType, active?: boolean }) {
+function StatCompact({ title, value, color = "text-foreground" }: { title: string, value: string, color?: string }) {
   return (
-    <div className={cn(
-      "p-5 rounded-3xl transition-all duration-500 cursor-pointer group border-2",
-      active ? "text-white bg-zinc-950 dark:bg-zinc-100 dark:text-black border-zinc-950 dark:border-zinc-100 shadow-xl scale-110" : "text-zinc-300 hover:text-foreground border-transparent hover:bg-foreground/5"
-    )}>
-      <Icon className="w-7 h-7" />
-    </div>
-  );
-}
-
-function StatCard({ title, value, change, color = "text-foreground" }: { title: string, value: string, change?: string, color?: string }) {
-  return (
-    <OnyxCard className="p-8 bg-foreground/[0.02] border-border flex flex-col justify-between">
-      <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6">{title}</h4>
-      <div className="flex items-baseline justify-between gap-4">
-        <span className={cn("text-3xl font-black tabular-nums tracking-tighter font-outfit", color)}>{value}</span>
-        {change && (
-          <span className={cn(
-            "text-[10px] font-bold px-2 py-1 rounded-full",
-            change.startsWith('+') ? "text-emerald-600 bg-emerald-500/10" : "text-rose-600 bg-rose-500/10"
-          )}>{change}</span>
-        )}
-      </div>
+    <OnyxCard className="p-6 border-border bg-transparent shadow-none">
+      <h4 className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] mb-4">{title}</h4>
+      <span className={cn("text-2xl font-black tabular-nums font-outfit tracking-tighter", color)}>{value}</span>
     </OnyxCard>
   );
 }
