@@ -32,7 +32,7 @@ const RISK_ROUTER_INTENT_TYPE = {
 };
 
 const ABI = [
-  "function postEIP712Attestation(uint256 agentId, bytes32 checkpointHash, uint8 score, string calldata notes) external",
+  "function postAttestation(uint256 agentId, bytes32 checkpointHash, uint8 score, uint8 proofType, bytes calldata proof, string calldata notes) external",
   "function submitTradeIntent((uint256 agentId, address agentWallet, string pair, string action, uint256 amountUsdScaled, uint256 maxSlippageBps, uint256 nonce, uint256 deadline) intent, bytes signature) external returns (bool approved, string memory reason)",
   "function getIntentNonce(uint256 agentId) external view returns (uint256)",
 ];
@@ -180,7 +180,15 @@ export class Auditor {
   async postOnChain(checkpointHash: string, score: number = 100, notes: string = "Autonomous cycle validation") {
     try {
       console.log(`🔗 Posting attestation to Registry: ${this.registryAddress}...`);
-      const tx = await this.registryContract.postEIP712Attestation(this.agentId, checkpointHash, score, notes);
+      // ProofType.EIP712 = 1 based on ValidationRegistry.sol enum
+      const tx = await this.registryContract.postAttestation(
+        this.agentId, 
+        checkpointHash, 
+        score, 
+        1,       // ProofType.EIP712
+        "0x",    // Empty proof bytes
+        notes
+      );
       await tx.wait();
       return tx.hash;
     } catch (error) {
