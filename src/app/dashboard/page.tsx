@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  ConnectButton 
+} from '@rainbow-me/rainbowkit';
+import { 
   LayoutDashboard, 
   Wallet, 
   History, 
@@ -21,6 +24,7 @@ import { PoolStatus } from '@/components/Dashboard/PoolStatus';
 import { AuditLogs, AuditLog } from '@/components/Dashboard/AuditLogs';
 import { AgentControlPanel } from '@/components/Dashboard/AgentCommandCenter';
 import { cn, formatCurrency } from '@/lib/utils';
+import { ThemeToggle } from '@/components/Navigation/ThemeToggle';
 
 export default function Dashboard() {
   const [agentState, setAgentState] = useState<any>(null);
@@ -28,7 +32,6 @@ export default function Dashboard() {
   const [isAuto, setIsAuto] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Load persisted logs on mount
   useEffect(() => {
     setIsMounted(true);
     fetch('/api/agent/logs')
@@ -37,7 +40,6 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  // Polling logic for autonomous mode
   useEffect(() => {
     if (!isAuto) return;
     let interval: any;
@@ -49,7 +51,6 @@ export default function Dashboard() {
         setAgentState(state);
 
         if (state.lastAction && state.lastAction !== 'MONITOR_IDLE' && state.lastAction !== 'IDLE') {
-          // Refresh logs from DB after each action
           fetch('/api/agent/logs')
             .then(r => r.json())
             .then(setLogs)
@@ -65,7 +66,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isAuto]);
 
-  useEffect(() => { setIsMounted(true); }, []);
   if (!isMounted) return null;
 
   const currentPool = agentState?.currentPool || {
@@ -78,68 +78,74 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-400 font-inter selection:bg-brand-orange/30 overflow-x-hidden">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-20 border-r border-onyx-border flex flex-col items-center py-8 gap-10 bg-black/40 backdrop-blur-3xl z-50">
-        <div className="w-12 h-12 bg-brand-orange rounded-2xl flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,107,0,0.3)] border border-white/10">
+    <div className="min-h-screen bg-background text-foreground/70 font-inter selection:bg-brand-orange/10 overflow-x-hidden transition-colors duration-500">
+      {/* Sidebar - Pearl Frost */}
+      <aside className="fixed left-0 top-0 bottom-0 w-24 border-r border-border flex flex-col items-center py-10 gap-12 bg-background/60 backdrop-blur-3xl z-50 shadow-sm transition-colors duration-500">
+        <div className="w-14 h-14 bg-brand-orange rounded-2xl flex items-center justify-center text-white shadow-[0_8px_24px_rgba(255,107,0,0.2)]">
           <BrainCircuit className="w-8 h-8" />
         </div>
         
-        <nav className="flex flex-col gap-6">
+        <nav className="flex flex-col gap-8">
           <SidebarIcon icon={LayoutDashboard} active />
           <SidebarIcon icon={Wallet} />
           <SidebarIcon icon={Terminal} />
           <SidebarIcon icon={Settings} />
         </nav>
 
-        <div className="mt-auto flex flex-col gap-6">
+        <div className="mt-auto flex flex-col gap-8 items-center">
+          <ThemeToggle />
           <SidebarIcon icon={Bell} />
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-orange to-orange-400 border border-white/20 p-[2px]">
-            <div className="w-full h-full bg-zinc-900 rounded-full" />
+          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-orange to-orange-400 border border-border p-[2px] shadow-sm">
+            <div className="w-full h-full bg-foreground/10 rounded-full" />
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="ml-20 p-10 max-w-[1600px] mx-auto">
+      <main className="ml-24 p-12 max-w-[1700px] mx-auto">
         {/* Header */}
-        <header className="flex items-center justify-between mb-12">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-16 gap-8">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="px-2 py-0.5 rounded text-[10px] bg-brand-orange/10 text-brand-orange border border-brand-orange/20 font-bold tracking-tighter uppercase leading-none h-fit">Sepolia Layer</span>
-              <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3 font-outfit">
-                YieldMind <span className="text-zinc-800 font-light">/</span> <span className="text-zinc-500 font-medium">Dashboard</span>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="px-3 py-1 rounded-full text-[10px] bg-foreground/5 text-brand-orange border border-border font-black uppercase tracking-[0.2em] leading-none h-fit">Network: Sepolia</span>
+              <h1 className="text-4xl font-black text-foreground tracking-tight flex items-center gap-3 font-outfit">
+                YieldMind <span className="text-zinc-200 font-light">/</span> <span className="text-zinc-400 font-medium">Alpha Terminal</span>
               </h1>
             </div>
-            <p className="text-zinc-500 text-sm font-medium italic opacity-70">Autonomous Delta-Neutral LP via Kraken CLI</p>
+            <p className="text-zinc-400 text-sm font-semibold tracking-wide">Autonomous Delta-Neutral Liquidity via Kraken CLI</p>
           </div>
 
-          <div className="flex items-center gap-8 bg-zinc-950/40 p-5 rounded-2xl border border-white/5 ring-1 ring-white/5">
+          <div className="flex items-center gap-10 bg-background/40 p-6 rounded-[40px] border border-border shadow-sm backdrop-blur-3xl transition-colors duration-500">
             <div className="flex flex-col items-end">
-              <span className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">Managed Equity</span>
-              <span className="text-2xl font-black text-white tabular-nums drop-shadow-sm">{formatCurrency(agentState?.portfolioValue || 245800)}</span>
+              <span className="text-zinc-400 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Managed Equity</span>
+              <span className="text-3xl font-black text-foreground tabular-nums font-outfit">{formatCurrency(agentState?.portfolioValue || 245800)}</span>
             </div>
-            <div className="h-10 w-px bg-zinc-800/50" />
+            <div className="h-12 w-px bg-border" />
             <div className="flex flex-col items-end">
-              <span className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">Total Realized PnL</span>
-              <span className="text-2xl font-black text-emerald-500 tabular-nums">+{formatCurrency(12450.22)}</span>
+              <span className="text-zinc-400 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Total Yield</span>
+              <span className="text-3xl font-black text-emerald-600 tabular-nums font-outfit">+{formatCurrency(12450.22)}</span>
+            </div>
+            <div className="scale-110">
+              <ConnectButton chainStatus="icon" showBalance={false} accountStatus="avatar" />
             </div>
           </div>
         </header>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-10">
           
           {/* Intelligence Feed */}
-          <div className="col-span-12 lg:col-span-4 translate-y-[-1px]">
-            <OnyxCard className="h-full border-brand-orange/10" glow>
-              <div className="flex items-center gap-3 mb-6">
-                <Cpu className="w-5 h-5 text-brand-orange" />
-                <h3 className="text-lg font-bold text-white font-outfit">AI Cognition Stream</h3>
+          <div className="col-span-12 lg:col-span-4">
+            <OnyxCard className="h-full bg-background/60">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                  <Cpu className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground font-outfit tracking-tight">AI Cognition</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <IntelligenceItem time="12:45:01" status="SCANNING" text="Evaluating Aerodrome/Base APR spread..." />
-                <IntelligenceItem time="12:44:22" status="HEDGING" text="Rebalancing delta via Kraken paper-trade engine." />
+                <IntelligenceItem time="12:44:22" status="HEDGING" text="Rebalancing delta via Kraken engine." />
                 <IntelligenceItem time="12:42:15" status="AUDIT" text="Post-trade checkpoint verified on Sepolia." />
                 <IntelligenceItem time="12:40:00" status="IDLE" text="Monitoring liquidity depth for WETH/USDC." />
               </div>
@@ -165,15 +171,17 @@ export default function Dashboard() {
 
           {/* Logs */}
           <div className="col-span-12 lg:col-span-8">
-            <OnyxCard className="min-h-[460px]">
-              <div className="flex items-center justify-between mb-8">
+            <OnyxCard className="h-full bg-background/60">
+              <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3">
-                  <Activity className="w-5 h-5 text-brand-orange" />
-                  <h3 className="text-lg font-bold text-white tracking-tight font-outfit">Verifiable Execution Logs</h3>
+                  <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground tracking-tight font-outfit">Auditor Execution Stream</h3>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-brand-orange/10 border border-brand-orange/20 rounded-full">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
-                  <span className="text-[10px] font-bold text-brand-orange uppercase tracking-widest leading-none">On-Chain Auditor: Active</span>
+                <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Trust Engine: Active</span>
                 </div>
               </div>
               <AuditLogs logs={logs} />
@@ -182,11 +190,11 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Strip */}
-        <div className="mt-12 grid grid-cols-4 gap-6">
-          <StatCard title="Accumulated Reputation" value="98.2 / 100" change="+2.4" color="text-brand-orange" />
-          <StatCard title="Hedge Success Rate" value="99.8%" change="+0.1%" />
-          <StatCard title="Kraken Volume" value="$1.2M" change="+14%" />
-          <StatCard title="Audit Artifacts" value={logs.length.toString()} color="text-emerald-400" />
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <StatCard title="Protocol Reputation" value="98.2 / 100" change="+2.4" color="text-brand-orange" />
+          <StatCard title="Hedge Accuracy" value="99.8%" change="+0.1%" />
+          <StatCard title="Market Depth" value="$1.2M" change="+14%" />
+          <StatCard title="Trust Artifacts" value={logs.length.toString()} color="text-emerald-600" />
         </div>
       </main>
     </div>
@@ -195,11 +203,11 @@ export default function Dashboard() {
 
 function IntelligenceItem({ time, status, text }: { time: string, status: string, text: string }) {
   return (
-    <div className="flex gap-4 group">
-      <div className="text-[10px] text-zinc-600 font-mono pt-1">{time}</div>
+    <div className="flex gap-5 group">
+      <div className="text-[10px] text-zinc-400 font-mono pt-1.5 font-bold">{time}</div>
       <div className="flex flex-col">
-        <div className="text-[10px] font-black text-brand-orange tracking-widest mb-1">{status}</div>
-        <div className="text-sm text-zinc-400 group-hover:text-white transition-colors">{text}</div>
+        <div className="text-[9px] font-black text-brand-orange tracking-[0.2em] mb-1">{status}</div>
+        <div className="text-sm text-zinc-500 group-hover:text-foreground transition-colors font-medium">{text}</div>
       </div>
     </div>
   );
@@ -208,27 +216,28 @@ function IntelligenceItem({ time, status, text }: { time: string, status: string
 function SidebarIcon({ icon: Icon, active = false }: { icon: React.ElementType, active?: boolean }) {
   return (
     <div className={cn(
-      "p-4 rounded-2xl transition-all cursor-pointer group hover:bg-zinc-900 border border-transparent",
-      active ? "text-black bg-brand-orange border-white/20 shadow-inner" : "text-zinc-600 hover:text-zinc-300"
+      "p-5 rounded-3xl transition-all duration-500 cursor-pointer group border-2",
+      active ? "text-white bg-zinc-950 dark:bg-zinc-100 dark:text-black border-zinc-950 dark:border-zinc-100 shadow-xl scale-110" : "text-zinc-300 hover:text-foreground border-transparent hover:bg-foreground/5"
     )}>
-      <Icon className="w-6 h-6" />
+      <Icon className="w-7 h-7" />
     </div>
   );
 }
 
-function StatCard({ title, value, change, color = "text-white" }: { title: string, value: string, change?: string, color?: string }) {
+function StatCard({ title, value, change, color = "text-foreground" }: { title: string, value: string, change?: string, color?: string }) {
   return (
-    <OnyxCard className="p-8">
-      <h4 className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</h4>
-      <div className="flex items-baseline gap-3">
-        <span className={cn("text-3xl font-black tabular-nums tracking-tighter", color)}>{value}</span>
+    <OnyxCard className="p-8 bg-foreground/[0.02] border-border flex flex-col justify-between">
+      <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6">{title}</h4>
+      <div className="flex items-baseline justify-between gap-4">
+        <span className={cn("text-3xl font-black tabular-nums tracking-tighter font-outfit", color)}>{value}</span>
         {change && (
           <span className={cn(
-            "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
-            change.startsWith('+') ? "text-emerald-400 bg-emerald-400/10" : "text-rose-400 bg-rose-400/10"
+            "text-[10px] font-bold px-2 py-1 rounded-full",
+            change.startsWith('+') ? "text-emerald-600 bg-emerald-500/10" : "text-rose-600 bg-rose-500/10"
           )}>{change}</span>
         )}
       </div>
     </OnyxCard>
   );
 }
+

@@ -7,63 +7,78 @@ import { cn } from '@/lib/utils';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  glow?: boolean;
 }
 
-export const OnyxCard = ({ children, className, glow = false }: CardProps) => {
+export function OnyxCard({ children, className = "" }: CardProps) {
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.5 }}
       className={cn(
-        "relative rounded-[32px] overflow-hidden border border-white/5 bg-zinc-950/40 backdrop-blur-xl p-8 transition-colors hover:border-white/10",
-        glow && "shadow-[0_0_50px_rgba(255,107,0,0.05)]",
+        "glass-onyx p-8 rounded-[40px] border border-transparent",
         className
       )}
     >
-      {/* Subtle internal gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-      <div className="relative z-10">{children}</div>
+      {children}
     </motion.div>
   );
-};
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
 }
 
-export const EmberButton = ({ 
+export function EmberButton({ 
   children, 
   variant = 'primary', 
-  size = 'md', 
-  className, 
-  ...props 
-}: ButtonProps) => {
-  const sizes = {
-    sm: "px-4 py-2 text-xs",
-    md: "px-8 py-3 text-sm",
-    lg: "px-10 py-4 text-base"
+  size = 'md',
+  className = "",
+  onClick
+}: { 
+  children: React.ReactNode, 
+  variant?: 'primary' | 'secondary' | 'ghost',
+  size?: 'sm' | 'md' | 'lg',
+  className?: string,
+  onClick?: () => void
+}) {
+  const variants = {
+    primary: "bg-brand-orange text-white hover:bg-brand-orange/90 shadow-[0_12px_40px_rgba(255,107,0,0.25)]",
+    secondary: "bg-foreground/5 text-foreground hover:bg-foreground/10 border border-border",
+    ghost: "bg-background/40 backdrop-blur-md border border-border text-foreground hover:bg-background/60 hover:border-foreground/20"
   };
 
-  const variants = {
-    primary: "bg-brand-orange text-black hover:bg-orange-400 ember-glow",
-    ghost: "bg-transparent text-white border border-white/10 hover:bg-white/5"
+  const sizes = {
+    sm: "px-6 py-2.5 text-xs",
+    md: "px-8 py-4 text-sm",
+    lg: "px-10 py-5 text-base"
   };
 
   return (
     <motion.button
       whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      onClick={onClick}
       className={cn(
-        "rounded-full font-black uppercase tracking-widest transition-all duration-300",
-        sizes[size],
+        "rounded-[40px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2",
         variants[variant],
+        sizes[size],
         className
       )}
-      {...(props as any)}
     >
       {children}
     </motion.button>
   );
-};
+}
+
+export function GlassStat({ label, value, trend }: { label: string, value: string, trend?: string }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">{label}</span>
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-black text-foreground font-outfit">{value}</span>
+        {trend && <span className="text-[10px] font-bold text-emerald-600">{trend}</span>}
+      </div>
+    </div>
+  );
+}
 

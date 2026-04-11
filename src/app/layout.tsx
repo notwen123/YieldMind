@@ -12,10 +12,8 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "YieldMind | Billion Dollar AI Hedge Fund",
-  description: "Autonomous liquidity management with industrial-grade delta-hedging.",
-};
+import { BlockchainProvider } from "@/components/BlockchainProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export default function RootLayout({
   children,
@@ -25,17 +23,24 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${outfit.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full bg-black text-white selection:bg-orange-500/30 overflow-x-hidden">
-        {/* Cinematic Backdrop */}
-        <div className="fixed inset-0 -z-10 bg-black">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,107,0,0.05),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
-        </div>
-        {children}
+      <body className="min-h-full bg-background text-foreground transition-colors duration-500 selection:bg-brand-orange/10 overflow-x-hidden">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <BlockchainProvider>
+            {/* Cinematic Backdrop - Theme Aware */}
+            <div className="fixed inset-0 -z-10 bg-background transition-colors duration-500">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--color-brand-orange-alpha),transparent_50%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-grid-line)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-grid-line)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            </div>
+            {children}
+          </BlockchainProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
+
 
