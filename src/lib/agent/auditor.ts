@@ -4,30 +4,30 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 const VALIDATION_ARTIFACT_TYPE = {
   TradeIntent: [
-    { name: 'agentId',           type: 'uint256' },
-    { name: 'action',            type: 'string'  },
-    { name: 'asset',             type: 'string'  },
-    { name: 'amount',            type: 'uint256' },
-    { name: 'deltaBeforeAction', type: 'int256'  },
-    { name: 'deltaAfterAction',  type: 'int256'  },
-    { name: 'expectedYieldAPR',  type: 'uint256' },
-    { name: 'riskScore',         type: 'uint256' },
-    { name: 'timestamp',         type: 'uint256' },
-    { name: 'chainId',           type: 'uint256' },
+    { name: 'agentId', type: 'uint256' },
+    { name: 'action', type: 'string' },
+    { name: 'asset', type: 'string' },
+    { name: 'amount', type: 'uint256' },
+    { name: 'deltaBeforeAction', type: 'int256' },
+    { name: 'deltaAfterAction', type: 'int256' },
+    { name: 'expectedYieldAPR', type: 'uint256' },
+    { name: 'riskScore', type: 'uint256' },
+    { name: 'timestamp', type: 'uint256' },
+    { name: 'chainId', type: 'uint256' },
   ],
 };
 
 // ERC-8004 Risk Router TradeIntent (matches RiskRouter.sol)
 const RISK_ROUTER_INTENT_TYPE = {
   TradeIntent: [
-    { name: 'agentId',         type: 'uint256' },
-    { name: 'agentWallet',     type: 'address' },
-    { name: 'pair',            type: 'string'  },
-    { name: 'action',          type: 'string'  },
+    { name: 'agentId', type: 'uint256' },
+    { name: 'agentWallet', type: 'address' },
+    { name: 'pair', type: 'string' },
+    { name: 'action', type: 'string' },
     { name: 'amountUsdScaled', type: 'uint256' },
-    { name: 'maxSlippageBps',  type: 'uint256' },
-    { name: 'nonce',           type: 'uint256' },
-    { name: 'deadline',        type: 'uint256' },
+    { name: 'maxSlippageBps', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
   ],
 };
 
@@ -57,12 +57,12 @@ export class Auditor {
 
   constructor() {
     try {
-      const rpcUrl   = process.env.SEPOLIA_RPC_URL || 'https://rpc.ankr.com/eth_sepolia';
+      const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://rpc.ankr.com/eth_sepolia';
       const proxyUrl = process.env.HTTPS_PROXY;
 
       const fetchReq = new ethers.FetchRequest(rpcUrl);
       fetchReq.timeout = 60000;
-      
+
       if (proxyUrl) {
         fetchReq.getUrlFunc = ethers.FetchRequest.createGetUrlFunc({
           agent: new HttpsProxyAgent(proxyUrl),
@@ -77,32 +77,32 @@ export class Auditor {
 
       // 🏺 Sovereign Guard: Prevent runtime crashes on missing secrets
       const registryAddr = process.env.NEXT_PUBLIC_VALIDATION_REGISTRY_ADDRESS;
-      const privateKey   = process.env.PRIVATE_KEY;
+      const privateKey = process.env.PRIVATE_KEY;
 
       if (!registryAddr || !privateKey) {
         console.warn("⚠️ [Auditor] Institutional credentials incomplete. Initializing in SCRUTINY_ONLY mode.");
         this.registryAddress = (registryAddr || '0x0000000000000000000000000000000000000000') as `0x${string}`;
-        this.signer          = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
+        this.signer = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
       } else {
         this.registryAddress = registryAddr as `0x${string}`;
-        this.signer          = new ethers.Wallet(privateKey, this.provider);
+        this.signer = new ethers.Wallet(privateKey, this.provider);
       }
 
       this.routerAddress = process.env.RISK_ROUTER_ADDRESS || ethers.ZeroAddress;
-      this.agentId       = Number(process.env.AGENT_ID ?? 5);
-      
+      this.agentId = Number(process.env.AGENT_ID ?? 5);
+
       this.registryContract = new ethers.Contract(this.registryAddress, ABI, this.signer);
-      this.routerContract   = new ethers.Contract(this.routerAddress, ABI, this.signer);
+      this.routerContract = new ethers.Contract(this.routerAddress, ABI, this.signer);
     } catch (error) {
       console.error("❌ Auditor initialization failed during boot:", error);
       // Ensure properties are at least minimally initialized to prevent downstream crashes
-      this.provider         = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth_sepolia');
-      this.signer           = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
-      this.registryAddress  = ethers.ZeroAddress;
-      this.routerAddress    = ethers.ZeroAddress;
-      this.agentId          = 0;
+      this.provider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth_sepolia');
+      this.signer = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
+      this.registryAddress = ethers.ZeroAddress;
+      this.routerAddress = ethers.ZeroAddress;
+      this.agentId = 0;
       this.registryContract = new ethers.Contract(ethers.ZeroAddress, ABI, this.signer);
-      this.routerContract   = new ethers.Contract(ethers.ZeroAddress, ABI, this.signer);
+      this.routerContract = new ethers.Contract(ethers.ZeroAddress, ABI, this.signer);
     }
   }
 
@@ -121,14 +121,14 @@ export class Auditor {
     };
 
     const intent = {
-      agentId:         this.agentId,
-      agentWallet:     this.signer.address,
+      agentId: this.agentId,
+      agentWallet: this.signer.address,
       pair,
       action,
       amountUsdScaled: BigInt(Math.floor(amountUsd * 100)),
-      maxSlippageBps:  BigInt(50), // 0.5%
+      maxSlippageBps: BigInt(50), // 0.5%
       nonce,
-      deadline:        BigInt(deadline),
+      deadline: BigInt(deadline),
     };
 
     // Support for EIP-1271 Smart Contract Wallets:
@@ -144,7 +144,7 @@ export class Auditor {
   async verifySignature(hash: string, signature: string, account: string): Promise<boolean> {
     const recovered = ethers.verifyMessage(ethers.getBytes(hash), signature);
     if (recovered.toLowerCase() === account.toLowerCase()) return true;
-    
+
     // Fallback: Check for EIP-1271 Magic Value (0x1626ba7e)
     try {
       const contract = new ethers.Contract(account, ["function isValidSignature(bytes32,bytes) view returns (bytes4)"], this.signer.provider);
@@ -183,16 +183,16 @@ export class Auditor {
     };
 
     const intent = {
-      agentId:           this.agentId,
+      agentId: this.agentId,
       action,
-      asset:             params.asset,
-      amount:            ethers.parseUnits(params.amount.toFixed(6), 18),
+      asset: params.asset,
+      amount: ethers.parseUnits(params.amount.toFixed(6), 18),
       deltaBeforeAction: BigInt(Math.floor(params.deltaBefore * 10000)),
-      deltaAfterAction:  BigInt(Math.floor(params.deltaAfter  * 10000)),
-      expectedYieldAPR:  BigInt(Math.floor(params.apr * 100)),
-      riskScore:         BigInt(params.riskScore),
-      timestamp:         BigInt(Math.floor(Date.now() / 1000)),
-      chainId:           BigInt(11155111),
+      deltaAfterAction: BigInt(Math.floor(params.deltaAfter * 10000)),
+      expectedYieldAPR: BigInt(Math.floor(params.apr * 100)),
+      riskScore: BigInt(params.riskScore),
+      timestamp: BigInt(Math.floor(Date.now() / 1000)),
+      chainId: BigInt(11155111),
     };
 
     const signature = await this.signer.signTypedData(domain, VALIDATION_ARTIFACT_TYPE, intent);
@@ -204,9 +204,9 @@ export class Auditor {
       console.log(`🔗 Posting attestation to Registry: ${this.registryAddress}...`);
       // ProofType.EIP712 = 1 based on ValidationRegistry.sol enum
       const tx = await this.registryContract.postAttestation(
-        this.agentId, 
-        checkpointHash, 
-        score, 
+        this.agentId,
+        checkpointHash,
+        score,
         1,       // ProofType.EIP712
         "0x",    // Empty proof bytes
         notes
@@ -223,18 +223,18 @@ export class Auditor {
     const { data, error } = await supabaseAdmin
       .from('audit_logs')
       .insert({
-        agent_id:    this.agentId,
+        agent_id: this.agentId,
         action,
-        asset:       params.asset,
-        amount:      params.amount,
+        asset: params.asset,
+        amount: params.amount,
         delta_before: params.deltaBefore,
-        delta_after:  params.deltaAfter,
-        apr:         params.apr,
-        risk_score:  params.riskScore,
-        signature:   signature || null,
-        tx_hash:     txHash || null,
-        timestamp:   new Date().toISOString(),
-        details:     signature ? `EIP-712 artifact verified by ${this.signer.address}` : 'Institutional Scrutiny Heartbeat',
+        delta_after: params.deltaAfter,
+        apr: params.apr,
+        risk_score: params.riskScore,
+        signature: signature || null,
+        tx_hash: txHash || null,
+        timestamp: new Date().toISOString(),
+        details: signature ? `EIP-712 artifact verified by ${this.signer.address}` : 'Institutional Scrutiny Heartbeat',
       })
       .select()
       .single();

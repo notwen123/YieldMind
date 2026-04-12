@@ -13,5 +13,13 @@ export function getAdminClient() {
   });
 }
 
-// Convenience singleton for API routes
-export const supabaseAdmin = getAdminClient();
+// Convenience singleton for API routes — only initialized on first access
+let _adminClient: any = null;
+export const supabaseAdmin = new Proxy({} as any, {
+  get: (target, prop) => {
+    if (!_adminClient) {
+      _adminClient = getAdminClient();
+    }
+    return _adminClient[prop];
+  }
+});

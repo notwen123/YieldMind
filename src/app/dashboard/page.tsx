@@ -131,9 +131,14 @@ export default function Dashboard() {
     };
 
     const fetchOnChainLogs = async () => {
-      // Guard: Ensure RPC connectivity
-      if (!publicClient || !REGISTRY_ADDRESS || REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
-        console.warn("⚠️ [Telemetry] On-chain registry anchor missing. Skipping validation sync.");
+      // Guard: Ensure RPC connectivity and valid hex address
+      const isRegistryValid = REGISTRY_ADDRESS && 
+                              REGISTRY_ADDRESS !== '0x0000000000000000000000000000000000000000' &&
+                              REGISTRY_ADDRESS.startsWith('0x') &&
+                              REGISTRY_ADDRESS.length === 42;
+
+      if (!publicClient || !isRegistryValid) {
+        console.warn("⚠️ [Telemetry] On-chain registry anchor missing or invalid hex. Skipping validation sync.");
         return;
       }
 
@@ -143,7 +148,8 @@ export default function Dashboard() {
           address: REGISTRY_ADDRESS,
           event: parseAbiItem('event AttestationPosted(uint256 indexed agentId, bytes32 checkpointHash, uint8 score, uint8 proofType, string notes)'),
           args: { agentId: TARGET_AGENT_ID },
-          fromBlock: currentBlock - BigInt(800)
+          fromBlock: currentBlock - BigInt(100)
+
         });
 
         const formattedLogs: AuditLog[] = await Promise.all(logs.map(async (log: any) => {
@@ -377,6 +383,7 @@ export default function Dashboard() {
                 logs={persistentLogs}
                 terminalLogs={terminalLogs}
                 isConnected={isConnected}
+                address={address}
               />
             )}
             {activeTab === 'wallet' && (
@@ -497,7 +504,8 @@ function TerminalTab({ chartData, oracleSource, isAuto, onToggle, logs, terminal
   onToggle: () => void, 
   logs: any[], 
   terminalLogs: TerminalLog[],
-  isConnected: boolean 
+  isConnected: boolean,
+  address?: string
 }) {
   return (
     <div className="space-y-8">

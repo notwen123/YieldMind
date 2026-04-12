@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
+
 import { YieldMindOrchestrator } from '@/lib/agent/orchestrator';
 
 // Singleton orchestrator — persists across hot-reloads in dev
