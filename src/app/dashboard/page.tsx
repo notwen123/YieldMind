@@ -62,7 +62,15 @@ export default function Dashboard() {
   const seenLogIds = useRef<Set<string>>(new Set());
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const [agentState, setAgentState] = useState<any>(null);
-  const [localAgents, setLocalAgents] = useState<{name: string, engine: string, risk: string}[]>([]);
+  const [localAgents, setLocalAgents] = useState<{name: string, engine: string, risk: string}[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ym_sovereign_agents');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      }
+    }
+    return [];
+  });
   const [terminalLogs, setTerminalLogs] = useState<TerminalLog[]>([]);
   const [successPopup, setSuccessPopup] = useState<{hash: string, open: boolean}>({ hash: '', open: false });
   const publicClient = usePublicClient();
@@ -78,66 +86,53 @@ export default function Dashboard() {
   const managedEquity = agentState ? 245000 + (agentState.totalPnl * 100) : (currentEthValue * latestPrice) + currentUsdcValue;
   const portfolioDelta = agentState ? agentState.portfolioDelta : 0.00;
 
-  // 🏺 Phase 1: Real-time Institutional Telemetry (Supabase)
+  // 🏺 Phase 1: Institutional Telemetry (Unified)
   useEffect(() => {
     if (!isMounted) return;
 
-    // Fetch Initial Logs
-    const fetchLogs = async () => {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(20);
-      
-      if (!error && data) {
-        setPersistentLogs(data.map(d => ({
-          id: d.id.toString(),
-          action: d.action,
-          timestamp: new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          txHash: d.tx_hash || '',
-          status: 'VALIDATED',
-          details: d.details || `${d.action} recorded on-chain via Auditor.`
-        })));
+    // 🏺 Sovereign Telemetry: Synchronize historical and live audit streams
+    const synchronizeAuditTrail = async () => {
+      try {
+        const { data, error: sbError } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(50);
+        
+        if (sbError) {
+          console.error("Supabase Handshake Failed:", sbError.message, sbError.details);
+          return;
+        }
+        
+        const formatted = data.map((log: any) => ({
+          id: log.id.toString(),
+          action: log.action as any,
+          timestamp: new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          txHash: log.tx_hash,
+          status: (log.signature ? 'VALIDATED' : 'SCRUTINIZED') as 'VALIDATED' | 'SCRUTINIZED',
+          details: log.details || 'Active institutional scrutiny.'
+        }));
+
+        setPersistentLogs(prev => {
+          const merged = [...formatted, ...prev].filter((v, i, a) => 
+            a.findIndex(t => (t.id === v.id || (t.txHash === v.txHash && v.txHash !== null))) === i
+          );
+          return merged.sort((a, b) => b.id.split('-').pop()!.localeCompare(a.id.split('-').pop()!));
+        });
+      } catch (e: any) {
+        console.error("Critical Telemetry Disruption:", e.message || e);
       }
     };
 
-    fetchLogs();
-
-    // Subscribe to Live Pipeline
-    const channel = supabase
-      .channel('audit-logs-prow')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, (payload) => {
-        const d = payload.new;
-        const newLog: AuditLog = {
-          id: d.id.toString(),
-          action: d.action,
-          timestamp: new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          txHash: d.tx_hash || '',
-          status: 'VALIDATED',
-          details: d.details || `${d.action} executed autonomously.`
-        };
-        setPersistentLogs(prev => [newLog, ...prev].slice(0, 50));
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isMounted]);
-
-  // 🏺 Phase 1.5: Real-Time On-Chain Intelligence (Live Fetch)
-  useEffect(() => {
-    if (!isMounted || !publicClient || !REGISTRY_ADDRESS) return;
-
     const fetchOnChainLogs = async () => {
+      if (!publicClient || !REGISTRY_ADDRESS) return;
       try {
         const currentBlock = await publicClient.getBlockNumber();
         const logs = await publicClient.getLogs({
           address: REGISTRY_ADDRESS,
           event: parseAbiItem('event AttestationPosted(uint256 indexed agentId, bytes32 checkpointHash, uint8 score, uint8 proofType, string notes)'),
           args: { agentId: TARGET_AGENT_ID },
-          fromBlock: currentBlock - 800n
+          fromBlock: currentBlock - BigInt(800)
         });
 
         const formattedLogs: AuditLog[] = await Promise.all(logs.map(async (log: any) => {
@@ -165,14 +160,15 @@ export default function Dashboard() {
       }
     };
 
+    synchronizeAuditTrail();
     fetchOnChainLogs();
-  }, [isMounted, publicClient, REGISTRY_ADDRESS]);
+  }, [isMounted, publicClient, REGISTRY_ADDRESS, TARGET_AGENT_ID]);
 
   useWatchContractEvent({
     address: REGISTRY_ADDRESS,
     abi: [parseAbiItem('event AttestationPosted(uint256 indexed agentId, bytes32 checkpointHash, uint8 score, uint8 proofType, string notes)')],
     eventName: 'AttestationPosted',
-    onLogs(logs) {
+    onLogs(logs: any[]) {
       const newLogs: AuditLog[] = logs.map((log: any) => {
         const notes = log.args.notes || '';
         const action = notes.toLowerCase().includes('rebalance') ? 'REBALANCE' : 
@@ -240,12 +236,11 @@ export default function Dashboard() {
         }
       };
 
-      // Poll every 15 seconds for production-like responsiveness
       pollingRef.current = setInterval(runCycle, 15000);
-      runCycle(); // Initial trigger
+      runCycle(); 
     } else {
       if (pollingRef.current) clearInterval(pollingRef.current);
-      setTerminalLogs([]); // Clear logs when stopping
+      setTerminalLogs([]);
     }
 
     return () => {
@@ -253,34 +248,16 @@ export default function Dashboard() {
     };
   }, [isAuto, isMounted]);
 
-  // Load from Sovereignty Records
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ym_sovereign_agents');
-      if (saved) {
-        try {
-          setLocalAgents(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to load institutional records:", e);
-        }
-      }
-    }
-  }, []);
-
   // Sync to Sovereignty Records
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && isMounted) {
       localStorage.setItem('ym_sovereign_agents', JSON.stringify(localAgents));
     }
-  }, [localAgents]);
+  }, [localAgents, isMounted]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-
-
-
 
   // Clear logs on disconnect for sovereignty
   useEffect(() => {
@@ -583,9 +560,14 @@ function WalletTab({ ethBalance, usdcBalance, localAgents, onAdd }: { ethBalance
 
       <div 
         onClick={onAdd}
-        className="glass-precision p-10 border-dashed border-border/40 flex items-center justify-center group cursor-pointer hover:border-brand-orange/40 transition-all duration-500 bg-foreground/[0.02]"
+        className="relative overflow-hidden p-10 flex flex-col items-center justify-center group cursor-pointer transition-all duration-500 bg-zinc-950/40 border border-zinc-800/50 rounded-3xl hover:border-brand-orange/40 hover:bg-zinc-950/60 shadow-2xl"
       >
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 group-hover:text-brand-orange">+ Add Network Asset</span>
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-brand-orange group-hover:border-brand-orange/30 transition-all duration-500 mb-6 shadow-inner">
+          <Activity className="w-6 h-6" />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 group-hover:text-foreground transition-all">Add Network Asset</span>
+        <div className="mt-2 text-[8px] font-bold text-zinc-700 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Initialize Sovereign Record</div>
       </div>
     </div>
   );

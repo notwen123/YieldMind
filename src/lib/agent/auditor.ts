@@ -209,14 +209,19 @@ export class Auditor {
         delta_after:  params.deltaAfter,
         apr:         params.apr,
         risk_score:  params.riskScore,
-        signature,
-        tx_hash:     txHash,
-        details:     `EIP-712 artifact verified by ${this.signer.address}`,
+        signature:   signature || null,
+        tx_hash:     txHash || null,
+        timestamp:   new Date().toISOString(),
+        details:     signature ? `EIP-712 artifact verified by ${this.signer.address}` : 'Institutional Scrutiny Heartbeat',
       })
       .select()
       .single();
 
     if (error) throw error;
     return data;
+  }
+
+  async logHeartbeat(action: string, params: AuditParams) {
+    return this.postToRegistry(action, params, '');
   }
 }

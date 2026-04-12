@@ -4,15 +4,17 @@ import React, { useState } from 'react';
 import { Play, Pause, RefreshCcw, ShieldAlert, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { TerminalLog } from './AgentTerminal';
 
 export interface AgentControlPanelProps {
   isActive: boolean;
   onToggle: () => void;
+  terminalLogs: TerminalLog[];
 }
 
 import { OnyxCard } from '@/components/UI/EmberKit';
 
-export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, onToggle }) => {
+export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, onToggle, terminalLogs }) => {
   const [isRebalancing, setIsRebalancing] = useState(false);
 
   const triggerRebalance = async () => {

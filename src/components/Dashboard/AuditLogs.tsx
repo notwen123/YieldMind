@@ -7,10 +7,10 @@ import { cn, formatAddress } from '@/lib/utils';
 
 export interface AuditLog {
   id: string;
-  action: 'DEPOSIT_LP' | 'OPEN_HEDGE' | 'REBALANCE' | 'EXIT';
+  action: 'DEPOSIT_LP' | 'OPEN_HEDGE' | 'REBALANCE' | 'EXIT' | 'MONITOR_IDLE';
   timestamp: string;
-  txHash: string;
-  status: 'VALIDATED' | 'PENDING' | 'FAILED';
+  txHash: string | null;
+  status: 'VALIDATED' | 'PENDING' | 'FAILED' | 'SCRUTINIZED';
   details: string;
 }
 
@@ -60,9 +60,11 @@ export const AuditLogs: React.FC<AuditLogsProps> = ({ logs }) => {
                     "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500",
                     log.status === 'VALIDATED' 
                       ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.05)]" 
+                      : log.status === 'SCRUTINIZED'
+                      ? "bg-blue-500/10 border-blue-500/20 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.05)]"
                       : "bg-brand-orange/10 border-brand-orange/20 text-brand-orange shadow-[0_0_20px_rgba(255,107,0,0.05)]"
                   )}>
-                    {log.status === 'VALIDATED' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    {log.status === 'VALIDATED' ? <CheckCircle2 className="w-4 h-4" /> : log.status === 'SCRUTINIZED' ? <FileSearch className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                   </div>
                   
                   <div className="flex flex-col min-w-0">
@@ -78,17 +80,23 @@ export const AuditLogs: React.FC<AuditLogsProps> = ({ logs }) => {
                   <div className="flex flex-col items-end">
                     <span className="text-[8px] font-black text-zinc-700 dark:text-zinc-500 uppercase tracking-[0.25em] mb-1">Trace Hash</span>
                     <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-bold tracking-widest hover:text-brand-orange transition-colors cursor-help">
-                      {formatAddress(log.txHash)}
+                      {log.txHash ? formatAddress(log.txHash) : 'OFF-CHAIN'}
                     </span>
                   </div>
                   
-                  <a 
-                    href={`https://sepolia.etherscan.io/tx/${log.txHash}`}
-                    target="_blank"
-                    className="w-9 h-9 flex items-center justify-center bg-foreground/[0.03] border border-border rounded-xl text-zinc-500 hover:bg-brand-orange hover:text-white hover:border-brand-orange transition-all active:scale-90 hover:shadow-[0_0_20px_rgba(255,107,0,0.15)]"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+                  {log.txHash ? (
+                    <a 
+                      href={`https://sepolia.etherscan.io/tx/${log.txHash}`}
+                      target="_blank"
+                      className="w-9 h-9 flex items-center justify-center bg-foreground/[0.03] border border-border rounded-xl text-zinc-500 hover:bg-brand-orange hover:text-white hover:border-brand-orange transition-all active:scale-90 hover:shadow-[0_0_20px_rgba(255,107,0,0.15)]"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  ) : (
+                    <div className="w-9 h-9 flex items-center justify-center bg-foreground/[0.01] border border-dashed border-border/50 rounded-xl text-zinc-800">
+                      <FileSearch className="w-4 h-4" />
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))

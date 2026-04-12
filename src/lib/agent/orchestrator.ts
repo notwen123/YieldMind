@@ -137,7 +137,7 @@ export class YieldMindOrchestrator {
     const drift        = (Math.random() - 0.5) * 0.04; 
     const currentDelta = this.state.portfolioDelta + drift;
     const targetDelta  = 0.0;
-    const rebalanceThres = 0.05;
+    const rebalanceThres = 0.005; // 0.5% Threshold for high-frequency workingness
 
     this.state.portfolioDelta = currentDelta;
 
@@ -169,6 +169,17 @@ export class YieldMindOrchestrator {
       await this.auditor.postToRegistry('REBALANCE', params, signature, onChainTx || undefined);
     } else {
       this.state.lastAction = 'MONITOR_IDLE';
+      
+      const params: AuditParams = {
+        asset:       this.state.currentPool?.token0 || 'ETH',
+        amount:      0,
+        deltaBefore: currentDelta,
+        deltaAfter:  currentDelta,
+        apr:         this.state.currentPool?.apr || 0,
+        riskScore:   Math.floor(this.state.currentPool?.score || 100),
+      };
+
+      await this.auditor.logHeartbeat('MONITOR_IDLE', params);
     }
   }
 

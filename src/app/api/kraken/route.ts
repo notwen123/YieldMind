@@ -1,4 +1,9 @@
 import { NextResponse } from 'next/server';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import https from 'node:https';
+
+const proxy = process.env.HTTPS_PROXY;
+const agent = proxy ? new HttpsProxyAgent(proxy) : undefined;
 
 export async function GET() {
   const KRAKEN_API = 'https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=60';
@@ -11,7 +16,13 @@ export async function GET() {
     
     const response = await fetch(KRAKEN_API, {
       next: { revalidate: 60 },
-      signal: controller.signal
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'YieldMind/1.0',
+        'Accept': 'application/json'
+      },
+      // @ts-ignore - HttpsProxyAgent for node environment
+      agent: agent
     });
     clearTimeout(timeoutId);
     
