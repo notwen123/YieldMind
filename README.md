@@ -339,3 +339,6 @@ Built for the **lablab.ai × Surge × Kraken** Hackathon · April 2026
 *Every trade. Every hedge. Every rebalance. Proven on-chain.*
 
 </div>
+
+
+

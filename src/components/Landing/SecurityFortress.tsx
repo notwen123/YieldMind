@@ -34,7 +34,7 @@ export const SecurityFortress = () => {
               <Lock className="w-5 h-5 text-brand-orange" />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Protocol Immunity</span>
             </div>
-            <h2 className="text-5xl font-black text-foreground font-outfit leading-tight mb-8">
+            <h2 className="text-5xl font-black text-foreground font-bebas leading-tight mb-8">
               The Fortress of <br />
               <span className="text-brand-orange">Sovereign Capital.</span>
             </h2>

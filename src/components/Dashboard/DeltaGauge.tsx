@@ -69,7 +69,7 @@ export const DeltaGauge: React.FC<DeltaGaugeProps> = ({ value, label = "Portfoli
 
       <div className="text-center relative z-10">
         <h3 className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.25em] mb-1">{label}</h3>
-        <div className={`text-4xl font-black font-outfit tabular-nums tracking-tighter ${getColor(value)}`}>
+        <div className={`text-4xl font-black font-bebas tabular-nums tracking-widest ${getColor(value)}`}>
           {value > 0 ? '+' : ''}{(value * 100).toFixed(2)}
           <span className="text-lg opacity-50 ml-1">%</span>
         </div>

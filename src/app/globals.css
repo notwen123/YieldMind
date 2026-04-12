@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-inter: var(--font-inter);
-  --font-outfit: var(--font-outfit);
+  --font-bebas: var(--font-figtree);
+  --font-figtree: var(--font-figtree);
+  --font-mono: var(--font-mono);
   
   /* Brand Core */
   --color-brand-orange: #FF6B00;
@@ -45,12 +46,12 @@
   }
 
   body {
-    @apply bg-background text-foreground font-inter antialiased;
+    @apply bg-background text-foreground font-figtree antialiased font-medium;
     font-feature-settings: "cv11", "ss01";
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-outfit tracking-tighter text-foreground;
+    @apply font-figtree tracking-[0.1em] text-foreground font-bold uppercase;
   }
 }
 
@@ -79,7 +80,7 @@
   }
 
   .text-edge {
-    @apply font-outfit font-black uppercase tracking-tighter leading-[0.85] text-foreground;
+    @apply font-bebas font-normal uppercase tracking-wide leading-[0.85] text-foreground;
   }
 
   .text-gradient {
@@ -87,15 +88,26 @@
   }
 }
 
-/* Custom Refined Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
+/* Institutional Scrollers */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  @apply bg-foreground/5 rounded-full hover:bg-brand-orange/40 transition-colors;
+  @apply bg-foreground/5 rounded-full hover:bg-brand-orange/40 transition-all;
 }
 
 html {

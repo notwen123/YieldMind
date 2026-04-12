@@ -35,7 +35,7 @@ export const EngineBlueprint = () => {
             <Cpu className="w-5 h-5 text-brand-orange" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Core Infrastructure</span>
           </div>
-          <h2 className="text-5xl font-black text-foreground font-outfit leading-tight mb-8">
+          <h2 className="text-5xl font-black text-foreground font-bebas leading-tight mb-8">
             The YieldMind <br />
             <span className="text-brand-orange">Sovereign Engine.</span>
           </h2>

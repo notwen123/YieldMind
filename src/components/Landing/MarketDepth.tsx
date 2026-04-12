@@ -32,7 +32,7 @@ export const MarketDepth = () => {
               <Globe className="w-5 h-5 text-brand-orange" />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Global Liquidity Pulse</span>
             </div>
-            <h2 className="text-5xl font-black text-foreground font-outfit leading-[1.1] mb-8">
+            <h2 className="text-5xl font-black text-foreground font-bebas leading-[1.1] mb-8">
               Navigating the <br />
               <span className="text-brand-orange">Institutional Stream.</span>
             </h2>
@@ -57,7 +57,7 @@ export const MarketDepth = () => {
                       <span className="text-foreground font-black uppercase tracking-wider text-xs">{stat.label}</span>
                       <span className="text-brand-orange font-bold text-lg">{stat.value}</span>
                     </div>
-                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-tight">{stat.desc}</p>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{stat.desc}</p>
                   </div>
                 </div>
               ))}
@@ -97,7 +97,7 @@ export const MarketDepth = () => {
                 </div>
                 <div>
                   <h4 className="text-white font-black uppercase tracking-widest text-[9px]">Execution Terminal v2.4</h4>
-                  <p className="text-zinc-500 font-bold text-[8px] uppercase tracking-tighter">Verified On-Chain Oracle</p>
+                  <p className="text-zinc-500 font-bold text-[8px] uppercase tracking-widest">Verified On-Chain Oracle</p>
                 </div>
               </div>
 

@@ -24,7 +24,7 @@ export function YieldMarket() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-5xl md:text-7xl font-outfit font-black text-foreground tracking-tight leading-[0.9]"
+              className="text-5xl md:text-7xl font-bebas font-black text-foreground tracking-wide leading-[0.9]"
             >
               REAL-TIME <br />
               <span className="text-zinc-400/30">ALPHA STREAMS.</span>
@@ -37,7 +37,7 @@ export function YieldMarket() {
             className="flex flex-col items-end"
           >
             <span className="text-zinc-500 text-sm font-semibold mb-2">Total Managed Capacity</span>
-            <span className="text-5xl font-black text-foreground font-outfit">$48.2M</span>
+            <span className="text-5xl font-black text-foreground font-bebas">$48.2M</span>
           </motion.div>
         </div>
 
@@ -78,11 +78,11 @@ function MarketRow({ pool, apr, tvl, risk, active = false }: { pool: string, apr
           <div className="w-10 h-10 rounded-xl bg-foreground/[0.03] border border-border flex items-center justify-center">
             <BarChart3 className={cn("w-5 h-5", active ? "text-brand-orange" : "text-zinc-500")} />
           </div>
-          <span className="text-lg font-bold text-foreground font-outfit">{pool}</span>
+          <span className="text-lg font-bold text-foreground font-bebas">{pool}</span>
         </div>
       </td>
       <td className="px-10 py-8">
-        <span className="text-2xl font-black text-emerald-600 font-outfit">{apr}</span>
+        <span className="text-2xl font-black text-emerald-600 font-bebas">{apr}</span>
       </td>
       <td className="px-10 py-8">
         <span className="text-zinc-500 font-bold">{tvl}</span>

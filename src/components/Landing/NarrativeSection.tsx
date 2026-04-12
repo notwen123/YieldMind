@@ -46,8 +46,8 @@ export const NarrativeSection = () => {
                   <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Live Optimization</span>
                 </div>
-                <div className="text-3xl font-black text-foreground font-outfit">98.4%</div>
-                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">Efficiency Delta</div>
+                <div className="text-3xl font-black text-foreground font-bebas">98.4%</div>
+                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Efficiency Delta</div>
               </div>
             </div>
           </motion.div>
@@ -59,7 +59,7 @@ export const NarrativeSection = () => {
                 <PieChart className="w-5 h-5 text-brand-orange" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">The Problem Space</span>
               </div>
-              <h2 className="text-5xl font-black text-foreground font-outfit leading-tight mb-8">
+              <h2 className="text-5xl font-black text-foreground font-bebas leading-tight mb-8">
                 The Paradox of <br />
                 <span className="text-brand-orange">Static Liquidity.</span>
               </h2>

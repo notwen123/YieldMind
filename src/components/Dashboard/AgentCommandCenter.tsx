@@ -38,7 +38,7 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
         )} />
       </div>
 
-      <h3 className="text-foreground font-black text-xl mb-10 flex items-center gap-3 tracking-tighter font-outfit uppercase">
+      <h3 className="text-foreground font-black text-xl mb-10 flex items-center gap-3 tracking-widest font-bebas uppercase">
         <Zap className={cn("w-5 h-5 transition-colors duration-500", isActive ? "text-brand-orange" : "text-zinc-600")} />
         Agent Command <span className="text-zinc-700">Center</span>
       </h3>
@@ -66,11 +66,12 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
           <button
             onClick={triggerRebalance}
             disabled={!isActive || isRebalancing}
-            className="py-4 rounded-xl bg-foreground/[0.03] border border-border/10 text-zinc-500 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
+            className="py-4 rounded-xl bg-foreground/[0.07] border border-border/40 text-foreground/70 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-foreground/[0.1] hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all group/btn"
           >
             <motion.div
               animate={isRebalancing ? { rotate: 360 } : {}}
               transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="text-brand-orange"
             >
               <RefreshCcw className="w-3.5 h-3.5" />
             </motion.div>
@@ -79,9 +80,9 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
 
           <button
             disabled={!isActive}
-            className="py-4 rounded-xl bg-foreground/[0.03] border border-border/10 text-zinc-500 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/10 hover:text-rose-500 disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
+            className="py-4 rounded-xl bg-foreground/[0.07] border border-border/40 text-foreground/70 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-500/70" />
             Liquidate
           </button>
         </div>
@@ -91,7 +92,7 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
         <div className="flex items-center justify-between group/status">
           <div className="flex flex-col">
             <span className="text-zinc-600 text-[8px] font-black uppercase tracking-[0.25em] mb-1">Compute Environment</span>
-            <span className="text-[10px] font-bold text-foreground font-outfit uppercase">Kraken CLI Engine v4</span>
+            <span className="text-[10px] font-bold text-foreground font-bebas uppercase">Kraken CLI Engine v4</span>
           </div>
           <div className="flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
             <div className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -102,7 +103,7 @@ export const AgentControlPanel: React.FC<AgentControlPanelProps> = ({ isActive, 
         <div className="flex items-center justify-between group/status">
           <div className="flex flex-col">
             <span className="text-zinc-600 text-[8px] font-black uppercase tracking-[0.25em] mb-1">Liquidity Feed</span>
-            <span className="text-[10px] font-bold text-foreground font-outfit uppercase">Aerodrome Base LP</span>
+            <span className="text-[10px] font-bold text-foreground font-bebas uppercase">Aerodrome Base LP</span>
           </div>
           <div className="flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
             <div className="w-1 h-1 rounded-full bg-emerald-500" />

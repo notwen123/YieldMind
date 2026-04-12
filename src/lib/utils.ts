@@ -13,5 +13,6 @@ export function formatCurrency(value: number) {
 }
 
 export function formatAddress(address: string) {
+  if (!address) return 'N/A';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

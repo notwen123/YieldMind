@@ -72,19 +72,19 @@ export function EmberButton({
 export function GlassStat({ label, value, trend, className = "" }: { label: string, value: string, trend?: string, className?: string }) {
   return (
     <div className={cn(
-      "glass-precision p-8 rounded-[24px] group/stat cursor-default transition-all duration-500 hover:-translate-y-1",
+      "p-6 rounded-[24px] group/stat cursor-default transition-all duration-500 bg-foreground/[0.02] border border-border/10 hover:bg-foreground/[0.04]",
       className
     )}>
-      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-600 mb-4 block group-hover/stat:text-brand-orange transition-colors">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-4 block group-hover/stat:text-brand-orange transition-colors font-figtree">
         {label}
       </span>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-3xl font-black text-foreground font-outfit tabular-nums tracking-tighter leading-none">
+        <span className="text-3xl font-bold text-foreground font-figtree tabular-nums tracking-widest leading-none">
           {value}
         </span>
         {trend && (
           <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <span className="text-[9px] font-bold text-emerald-500">{trend}</span>
+            <span className="text-[9px] font-bold text-emerald-500 font-figtree">{trend}</span>
           </div>
         )}
       </div>

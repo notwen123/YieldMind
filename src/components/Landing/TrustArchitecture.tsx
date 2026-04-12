@@ -26,7 +26,7 @@ export function TrustArchitecture() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-outfit font-black text-foreground tracking-tight leading-[0.9]"
+            className="text-5xl md:text-7xl font-bebas font-black text-foreground tracking-wide leading-[0.9]"
           >
             TRUSTED BY CODE. <br />
             <span className="text-zinc-400/30">VERIFIED BY DESIGN.</span>
@@ -83,7 +83,7 @@ function ArchitectureCard({ icon: Icon, title, points, delay, highlight = false 
         <div className="w-20 h-20 rounded-[24px] bg-foreground/[0.03] border border-border flex items-center justify-center text-brand-orange mb-10 shadow-sm group-hover:scale-110 transition-transform">
           <Icon className="w-10 h-10" />
         </div>
-        <h3 className="text-3xl font-bold text-foreground mb-8 font-outfit tracking-tight">{title}</h3>
+        <h3 className="text-3xl font-bold text-foreground mb-8 font-bebas tracking-wide">{title}</h3>
         <ul className="space-y-6">
           {points.map((point: string, i: number) => (
             <li key={i} className="flex items-start gap-4">

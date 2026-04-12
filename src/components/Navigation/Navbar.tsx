@@ -34,7 +34,7 @@ export function Navbar() {
             <BrainCircuit className="w-6 h-6 shrink-0" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-outfit font-black text-foreground text-lg tracking-tight">YieldMind</span>
+            <span className="font-bebas font-black text-foreground text-lg tracking-wide">YieldMind</span>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Live Engine</span>

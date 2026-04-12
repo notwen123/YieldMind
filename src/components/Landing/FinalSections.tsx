@@ -104,7 +104,7 @@ export const MegaFooter = () => {
         style={{ y: monolithY }}
         className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 pointer-events-none select-none opacity-[0.03] whitespace-nowrap"
       >
-        <span className="text-[300px] md:text-[500px] font-black text-foreground font-outfit uppercase tracking-tighter">
+        <span className="text-[300px] md:text-[500px] font-black text-foreground font-bebas uppercase tracking-widest">
           YieldMind
         </span>
       </motion.div>
@@ -117,10 +117,10 @@ export const MegaFooter = () => {
               <div className="p-2 rounded-xl bg-brand-orange">
                 <Zap className="w-5 h-5 text-white fill-white" />
               </div>
-              <span className="text-2xl font-black text-foreground font-outfit tracking-tight">YieldMind</span>
+              <span className="text-2xl font-black text-foreground font-bebas tracking-wide">YieldMind</span>
             </div>
             
-            <p className="text-zinc-500 text-sm font-bold leading-relaxed max-w-xs uppercase tracking-tighter opacity-70">
+            <p className="text-zinc-500 text-sm font-bold leading-relaxed max-w-xs uppercase tracking-widest opacity-70">
               © copyright YieldMind 2026. <br /> All institutional alpha reserved.
             </p>
           </div>

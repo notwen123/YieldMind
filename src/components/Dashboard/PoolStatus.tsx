@@ -22,7 +22,7 @@ export const PoolStatus: React.FC<PoolStatusProps> = ({ poolName, apr, tvl, vola
             <Droplets className="w-6 h-6 text-brand-orange" />
           </div>
           <div>
-            <h3 className="text-foreground font-black text-xl font-outfit uppercase tracking-tighter">{poolName}</h3>
+            <h3 className="text-foreground font-black text-xl font-bebas uppercase tracking-widest">{poolName}</h3>
             <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.25em]">Base · Aerodrome Institutional</span>
           </div>
         </div>
