@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { supabaseAdmin } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 const VALIDATION_ARTIFACT_TYPE = {
   TradeIntent: [

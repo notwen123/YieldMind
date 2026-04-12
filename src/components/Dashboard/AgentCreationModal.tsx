@@ -35,7 +35,7 @@ export const AgentCreationModal: React.FC<AgentCreationModalProps> = ({ isOpen, 
       sendTransaction({
         to: '0x000000000000000000000000000000000000dEaD' as `0x${string}`,
         value: parseEther('0.0001'),
-        data: '0x594d5f464f524d4154494f4e' as `0x${string}`, // "YM_FORMATION"
+        gas: BigInt(21000), // simple ETH transfer, no calldata
       });
       
       setStep('provisioning');

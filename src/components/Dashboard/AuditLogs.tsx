@@ -32,13 +32,14 @@ export const AuditLogs: React.FC<AuditLogsProps> = ({ logs }) => {
   }, [logs]);
 
   return (
-    <div className="bg-transparent h-[450px] flex flex-col relative overflow-hidden">
+    <div className="bg-transparent h-[450px] flex flex-col relative">
       {/* Scroll indicator - Top/Bottom fades */}
       <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-background via-background/80 to-transparent pointer-events-none z-20" />
       
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-3 py-12 pr-2 scrollbar-hide overflow-x-hidden"
+        className="flex-1 overflow-y-scroll space-y-3 py-12 pr-2 overflow-x-hidden"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,107,0,0.3) transparent' }}
       >
         <AnimatePresence initial={false}>
           {logs.length === 0 ? (

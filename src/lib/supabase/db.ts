@@ -2,7 +2,7 @@
  * Server-side DB helpers using the centralized supabaseAdmin client.
  * All logic in here is for agents and server components.
  */
-import { supabaseAdmin } from './client';
+import { supabaseAdmin } from './server';
 
 // ─── Audit Logs ──────────────────────────────────────────────────────────────
 
