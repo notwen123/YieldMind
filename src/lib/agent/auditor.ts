@@ -47,6 +47,7 @@ export interface AuditParams {
 }
 
 export class Auditor {
+  private provider: ethers.JsonRpcProvider;
   private signer: ethers.Wallet;
   private registryAddress: string;
   private routerAddress: string;
@@ -55,33 +56,54 @@ export class Auditor {
   private routerContract: ethers.Contract;
 
   constructor() {
-    const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://rpc.ankr.com/eth_sepolia';
-    const proxyUrl = process.env.HTTPS_PROXY;
+    try {
+      const rpcUrl   = process.env.SEPOLIA_RPC_URL || 'https://rpc.ankr.com/eth_sepolia';
+      const proxyUrl = process.env.HTTPS_PROXY;
 
-    const fetchReq = new ethers.FetchRequest(rpcUrl);
-    fetchReq.timeout = 60000;
-    if (proxyUrl) {
-      fetchReq.getUrlFunc = ethers.FetchRequest.createGetUrlFunc({
-        agent: new HttpsProxyAgent(proxyUrl),
-      });
+      const fetchReq = new ethers.FetchRequest(rpcUrl);
+      fetchReq.timeout = 60000;
+      
+      if (proxyUrl) {
+        fetchReq.getUrlFunc = ethers.FetchRequest.createGetUrlFunc({
+          agent: new HttpsProxyAgent(proxyUrl),
+        });
+      }
+
+      this.provider = new ethers.JsonRpcProvider(
+        fetchReq,
+        { name: 'sepolia', chainId: 11155111 },
+        { staticNetwork: true }
+      );
+
+      // 🏺 Sovereign Guard: Prevent runtime crashes on missing secrets
+      const registryAddr = process.env.NEXT_PUBLIC_VALIDATION_REGISTRY_ADDRESS;
+      const privateKey   = process.env.PRIVATE_KEY;
+
+      if (!registryAddr || !privateKey) {
+        console.warn("⚠️ [Auditor] Institutional credentials incomplete. Initializing in SCRUTINY_ONLY mode.");
+        this.registryAddress = (registryAddr || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+        this.signer          = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
+      } else {
+        this.registryAddress = registryAddr as `0x${string}`;
+        this.signer          = new ethers.Wallet(privateKey, this.provider);
+      }
+
+      this.routerAddress = process.env.RISK_ROUTER_ADDRESS || ethers.ZeroAddress;
+      this.agentId       = Number(process.env.AGENT_ID ?? 5);
+      
+      this.registryContract = new ethers.Contract(this.registryAddress, ABI, this.signer);
+      this.routerContract   = new ethers.Contract(this.routerAddress, ABI, this.signer);
+    } catch (error) {
+      console.error("❌ Auditor initialization failed during boot:", error);
+      // Ensure properties are at least minimally initialized to prevent downstream crashes
+      this.provider         = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth_sepolia');
+      this.signer           = new ethers.Wallet('0x0000000000000000000000000000000000000000000000000000000000000001', this.provider);
+      this.registryAddress  = ethers.ZeroAddress;
+      this.routerAddress    = ethers.ZeroAddress;
+      this.agentId          = 0;
+      this.registryContract = new ethers.Contract(ethers.ZeroAddress, ABI, this.signer);
+      this.routerContract   = new ethers.Contract(ethers.ZeroAddress, ABI, this.signer);
     }
-
-    const provider = new ethers.JsonRpcProvider(
-      fetchReq,
-      { name: 'sepolia', chainId: 11155111 },
-      { staticNetwork: true },
-    );
-
-    const privateKey = process.env.PRIVATE_KEY;
-    if (!privateKey) throw new Error('PRIVATE_KEY not set');
-
-    this.signer = new ethers.Wallet(privateKey, provider);
-    this.registryAddress = process.env.VALIDATION_REGISTRY_ADDRESS || ethers.ZeroAddress;
-    this.routerAddress = process.env.RISK_ROUTER_ADDRESS || ethers.ZeroAddress;
-    this.agentId = Number(process.env.AGENT_ID ?? 5);
-    
-    this.registryContract = new ethers.Contract(this.registryAddress, ABI, this.signer);
-    this.routerContract = new ethers.Contract(this.routerAddress, ABI, this.signer);
   }
 
   /**

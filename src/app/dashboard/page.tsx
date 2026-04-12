@@ -92,6 +92,12 @@ export default function Dashboard() {
 
     // 🏺 Sovereign Telemetry: Synchronize historical and live audit streams
     const synchronizeAuditTrail = async () => {
+      // Guard: Ensure Supabase client is operational
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.warn("⚠️ [Telemetry] Supabase configuration missing. Terminal in OFFLINE mode.");
+        return;
+      }
+
       try {
         const { data, error: sbError } = await supabase
           .from('audit_logs')
@@ -125,7 +131,12 @@ export default function Dashboard() {
     };
 
     const fetchOnChainLogs = async () => {
-      if (!publicClient || !REGISTRY_ADDRESS) return;
+      // Guard: Ensure RPC connectivity
+      if (!publicClient || !REGISTRY_ADDRESS || REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
+        console.warn("⚠️ [Telemetry] On-chain registry anchor missing. Skipping validation sync.");
+        return;
+      }
+
       try {
         const currentBlock = await publicClient.getBlockNumber();
         const logs = await publicClient.getLogs({
