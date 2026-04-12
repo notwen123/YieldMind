@@ -24,40 +24,50 @@ export interface TerminalMetrics {
   }>;
 }
 
-const KRAKEN_API = 'https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=60';
+const KRAKEN_API = '/api/kraken';
 
 export function useTerminalData() {
-  // Kraken Market Data Fetcher
-  const { data: chartData, isLoading: isLoadingChart } = useQuery({
-    queryKey: ['kraken-ohlc', 'ETHUSD'],
+  // Resilient Oracle Fetcher
+  const { data, isLoading: isLoadingChart } = useQuery({
+    queryKey: ['institutional-ohlc'],
     queryFn: async () => {
       try {
         const response = await fetch(KRAKEN_API);
         const json = await response.json();
         
-        const pairKey = Object.keys(json.result).find(key => key !== 'last');
-        if (!pairKey) return [];
+        if (!json.result || !Array.isArray(json.result)) {
+          console.warn("Institutional Pipeline Warning:", json.error || "Malformed data");
+          return { source: json.source || 'ERROR', result: [] as OHLCData[] };
+        }
 
-        return json.result[pairKey].map((d: any) => ({
-          time: d[0],
+        const formatted = json.result.map((d: any) => ({
+          time: Number(d[0]),
           open: parseFloat(d[1]),
           high: parseFloat(d[2]),
           low: parseFloat(d[3]),
           close: parseFloat(d[4]),
         })) as OHLCData[];
+
+        return {
+          source: json.source as string,
+          result: formatted
+        };
       } catch (e) {
-        console.error("Kraken Fetch Error:", e);
-        return [];
+        console.error("Resilient Fetch Error:", e);
+        return { source: 'DISRUPTED', result: [] as OHLCData[] };
       }
     },
     refetchInterval: 60000,
   });
 
-  const latestPrice = chartData && chartData.length > 0 ? chartData[chartData.length - 1].close : 0;
+  const chartData = data?.result || [];
+  const oracleSource = data?.source || 'LOADING';
+  const latestPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : 0;
 
   return {
     chartData,
     latestPrice,
+    oracleSource,
     isLoading: isLoadingChart,
   };
 }

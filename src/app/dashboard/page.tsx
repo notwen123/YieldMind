@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [isAuto, setIsAuto] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { isConnected, address } = useAccount();
-  const { chartData, latestPrice, isLoading } = useTerminalData();
+  const { chartData, latestPrice, oracleSource, isLoading } = useTerminalData();
   
   // Real On-Chain Balances
   const ethBalance = useBalance({ 
@@ -59,6 +59,23 @@ export default function Dashboard() {
   const [localAgents, setLocalAgents] = useState<{name: string, engine: string, risk: string}[]>([]);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const seenLogIds = useRef<Set<string>>(new Set());
+
+  // Load from Sovereignty Records
+  useEffect(() => {
+    const saved = localStorage.getItem('ym_sovereign_agents');
+    if (saved) {
+      try {
+        setLocalAgents(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load institutional records:", e);
+      }
+    }
+  }, []);
+
+  // Sync to Sovereignty Records
+  useEffect(() => {
+    localStorage.setItem('ym_sovereign_agents', JSON.stringify(localAgents));
+  }, [localAgents]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -197,6 +214,7 @@ export default function Dashboard() {
             {activeTab === 'terminal' && (
               <TerminalTab 
                 chartData={chartData || []} 
+                oracleSource={oracleSource}
                 isAuto={isAuto} 
                 onToggle={() => setIsAuto(!isAuto)} 
                 logs={persistentLogs}
@@ -266,7 +284,7 @@ function OverviewTab({ tvl, logs }: { tvl: number, logs: any[] }) {
   );
 }
 
-function TerminalTab({ chartData, isAuto, onToggle, logs, isConnected }: { chartData: any[], isAuto: boolean, onToggle: () => void, logs: any[], isConnected: boolean }) {
+function TerminalTab({ chartData, oracleSource, isAuto, onToggle, logs, isConnected }: { chartData: any[], oracleSource: string, isAuto: boolean, onToggle: () => void, logs: any[], isConnected: boolean }) {
   return (
     <div className="space-y-8">
       <OnyxCard className="p-0 overflow-hidden">
@@ -284,7 +302,11 @@ function TerminalTab({ chartData, isAuto, onToggle, logs, isConnected }: { chart
             </div>
           </div>
         </div>
-        <MarketChart data={chartData} containerClassName="p-4" />
+        <MarketChart 
+          data={chartData} 
+          oracleSource={oracleSource} 
+          containerClassName="p-4" 
+        />
       </OnyxCard>
 
       <div className="grid grid-cols-12 gap-8">

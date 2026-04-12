@@ -31,13 +31,15 @@ export function EmberButton({
   variant = 'primary', 
   size = 'md',
   className = "",
-  onClick
+  onClick,
+  disabled
 }: { 
   children: React.ReactNode, 
   variant?: 'primary' | 'secondary' | 'ghost',
   size?: 'sm' | 'md' | 'lg',
   className?: string,
-  onClick?: () => void
+  onClick?: () => void,
+  disabled?: boolean
 }) {
   const variants = {
     primary: "bg-brand-orange text-white hover:bg-brand-orange/90 glow-gate border-brand-orange/20 shadow-[0_4px_20px_rgba(255,107,0,0.15)]",
@@ -56,9 +58,11 @@ export function EmberButton({
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={cn(
         "rounded-2xl font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border shadow-sm",
+        disabled && "opacity-40 cursor-not-allowed grayscale",
         variants[variant],
         sizes[size],
         className

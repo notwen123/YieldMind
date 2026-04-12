@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cpu, Target, ShieldAlert, Terminal, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Cpu, Target, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { EmberButton } from '@/components/UI/EmberKit';
-import { cn } from '@/lib/utils';
 
 interface AgentCreationModalProps {
   isOpen: boolean;
@@ -18,6 +17,54 @@ export const AgentCreationModal: React.FC<AgentCreationModalProps> = ({ isOpen, 
   const [name, setName] = useState('');
   const [engine, setEngine] = useState('Aerodrome Institutional');
   const [risk, setRisk] = useState('Balanced');
+  const [step, setStep] = useState<'form' | 'provisioning' | 'complete'>('form');
+  const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
+
+  const { sendTransaction, data: hash, isPending: isSigning } = useSendTransaction();
+  const { isLoading: isWaitingForChain } = useWaitForTransactionReceipt({ hash });
+
+  const addLog = (msg: string) => {
+    setConsoleLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  };
+
+  const startDeployment = async () => {
+    if (!name) return;
+    
+    try {
+      // Trigger Sovereign Signature
+      sendTransaction({
+        to: '0x000000000000000000000000000000000000dEaD' as `0x${string}`,
+        value: parseEther('0.0001'),
+        data: '0x594d5f464f524d4154494f4e' as `0x${string}`, // "YM_FORMATION"
+      });
+      
+      setStep('provisioning');
+      addLog("Initializing Sovereignty Protocol Alpha-7...");
+      await new Promise(r => setTimeout(r, 1000));
+      addLog("Requesting Institutional Handshake...");
+    } catch (e) {
+      console.error(e);
+      setStep('form');
+    }
+  };
+
+  // Deployment Logic Trigger
+  useEffect(() => {
+    if (hash && step === 'provisioning') {
+      const finalize = async () => {
+        addLog(`Chain Handshake Received: ${hash.slice(0, 10)}...`);
+        await new Promise(r => setTimeout(r, 1200));
+        addLog("Provisioning Neural Node on Sovereign Cluster...");
+        await new Promise(r => setTimeout(r, 1500));
+        addLog("Injecting Strategy: Delta-Neutral Yield Engine...");
+        await new Promise(r => setTimeout(r, 1000));
+        addLog("Finalizing Sovereign Record...");
+        setStep('complete');
+        onForm({ name, engine, risk });
+      };
+      finalize();
+    }
+  }, [hash, step, onForm, name, engine, risk]);
 
   if (!isOpen) return null;
 
@@ -58,7 +105,6 @@ export const AgentCreationModal: React.FC<AgentCreationModalProps> = ({ isOpen, 
                   exit={{ opacity: 0, x: 10 }}
                   className="space-y-10"
                 >
-                  {/* Asset Configuration */}
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 flex items-center gap-2">
@@ -100,7 +146,6 @@ export const AgentCreationModal: React.FC<AgentCreationModalProps> = ({ isOpen, 
                     </div>
                   </div>
 
-                  {/* Institutional Disclosure */}
                   <div className="p-6 bg-brand-orange/[0.03] rounded-2xl border border-brand-orange/10 flex gap-4">
                     <ShieldAlert className="w-5 h-5 text-brand-orange shrink-0" />
                     <p className="text-[11px] font-medium text-zinc-500 leading-relaxed italic">
