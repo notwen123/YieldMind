@@ -74,6 +74,14 @@ export class Auditor {
         { name: 'sepolia', chainId: 11155111 },
         { staticNetwork: true }
       );
+      
+      // Explicitly disable ENS resolution for this provider to prevent runtime crashes
+      // on unsupported networks (Sepolia)
+      this.provider.getNetwork = async () => {
+        const net = await Object.getPrototypeOf(this.provider).getNetwork.call(this.provider);
+        return Object.assign({}, net, { ensAddress: null });
+      };
+
 
       // 🏺 Sovereign Guard: Prevent runtime crashes on missing secrets
       const registryAddr = process.env.NEXT_PUBLIC_VALIDATION_REGISTRY_ADDRESS;
@@ -88,11 +96,21 @@ export class Auditor {
         this.signer = new ethers.Wallet(privateKey, this.provider);
       }
 
-      this.routerAddress = process.env.RISK_ROUTER_ADDRESS || ethers.ZeroAddress;
+      this.routerAddress = process.env.RISK_ROUTER_ADDRESS && ethers.isAddress(process.env.RISK_ROUTER_ADDRESS)
+        ? process.env.RISK_ROUTER_ADDRESS
+        : ethers.ZeroAddress;
       this.agentId = Number(process.env.AGENT_ID ?? 5);
 
-      this.registryContract = new ethers.Contract(this.registryAddress, ABI, this.signer);
-      this.routerContract = new ethers.Contract(this.routerAddress, ABI, this.signer);
+      this.registryContract = new ethers.Contract(
+        ethers.isAddress(this.registryAddress) ? this.registryAddress : ethers.ZeroAddress,
+        ABI,
+        this.signer
+      );
+      this.routerContract = new ethers.Contract(
+        ethers.isAddress(this.routerAddress) ? this.routerAddress : ethers.ZeroAddress,
+        ABI,
+        this.signer
+      );
     } catch (error) {
       console.error("❌ Auditor initialization failed during boot:", error);
       // Ensure properties are at least minimally initialized to prevent downstream crashes
