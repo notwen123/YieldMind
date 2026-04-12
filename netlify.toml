@@ -4,8 +4,12 @@
 
 [functions]
   node_bundler = "esbuild"
-  # Support for institutional on-chain attestation latency
-  timeout = 26 
+
+[functions."___netlify-handler"]
+  timeout = 26
+
+[functions."___netlify-odb-handler"]
+  timeout = 26
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
